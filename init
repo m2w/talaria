@@ -1,0 +1,96 @@
+#!/usr/bin/env sh
+# init is a simple script to automate the initialization of talaria for
+# jekyll-based projects that include it as a submodule
+
+# defaults
+JEKYLL_CONFIG=../_config.yml
+STATIC_DIR=../static
+SASS_DIR=../_sass/
+
+usage() {
+    cat <<EOF
+usage: $0 [-h] [-d directory] [-s sass_dir]
+
+This script will move all required talaria files into your jekyll-based project.
+
+OPTIONS:
+    -h    display this message
+    -d    provide a path to your asset files
+    -s    copy talaria.scss to your SASS dir
+
+NOTES:
+"directory" refers to the directory (inside your jekyll project) where you store your js/css files.
+
+"directory" defaults to ../static/
+
+"sass_dir" defaults to ../_sass/
+EOF
+}
+P=
+normalize() {
+    case $1 in
+	/*)
+	    P=$1
+	    ;;
+	../*)
+	    P=$1
+	    ;;
+	*)
+	    P="../$1"
+	    ;;
+    esac
+}
+move_includes() {
+    mkdir -p ../_includes
+    cp -i _includes/*.html ../_includes
+}
+compass_compile() {
+    command -v compass > /dev/null 2>&1 || { echo "talaria requires compass to compile to css" >&2; exit 1; }
+    compass compile
+}
+move_static_assests() {
+    cp -i static/js/talaria.js $STATIC_DIR/js
+    cp -i static/css/talaria.css $STATIC_DIR/css
+}
+update_jekyll_conf() {
+    if [[ -f $JEKYLL_CONFIG && $(grep "exclude: .*talaria.*" "$JEKYLL_CONFIG") ]]; then
+    	sed -E -e 's/^exclude: \[(.*)\]/exclude: \[\1, "talaria"\]/' -i '' $JEKYLL_CONFIG
+   else
+    	echo '\nexclude: ["talaria"]' >> $JEKYLL_CONFIG
+    fi
+}
+copy_sass() {
+    cp -i _sass/talaria.scss $SASS_DIR
+}
+
+while getopts hd:s: OPT;
+do
+    case $OPT in
+    h)
+        usage; exit 1
+        ;;
+    d)
+        normalize $OPTARG
+        STATIC_DIR=$P
+        if [[ $STATIC_DIR = */ ]]; then
+            STATIC_DIR="${STATIC_DIR%\/}"
+        fi
+        ;;
+    s)
+        normalize $OPTARG
+        SASS_DIR=$P
+        copy_sass
+        ;;
+    :)
+        echo "-$OPT requires that you provide a path to the directory"
+        exit 1
+        ;;
+    esac
+done
+
+echo "** Putting on my winged shoes **"
+compass_compile
+move_includes 
+move_static_assests
+update_jekyll_conf
+echo "** Done **"

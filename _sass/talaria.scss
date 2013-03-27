@@ -1,0 +1,83 @@
+@import "compass/css3/images";
+
+$red: #BA1204;
+$dark-red: #A31105;
+$light-red: #CA1000;
+
+div.comments-wrapper {
+    font-size: 90%;
+    h3 {
+        display:inline-block;
+    }
+}
+
+button.comment-button {
+    border-radius: 3px;
+    padding: 0.3rem 0.8rem;
+    border: 1px solid #5ca941;
+    background-color: #60b044;
+    text-shadow: 0 -1px 0 rgba(0,0,0,0.25);
+    color: #fff;
+    @include background-image(linear-gradient(#8add6d, #60b044));
+    background-repeat: repeat-x;
+    cursor: pointer;
+}
+
+div.comment-count {
+    float: right;
+    font-size: 90%;
+    margin-bottom: 0.5rem;
+}
+
+div.comment {
+    margin: 1em 0;
+    a {
+        text-decoration: none;
+        color: $red;
+        &:visited {
+            color: $dark-red;
+        }
+        &:hover, &:focus {
+            color: $light-red;
+            text-shadow: none;
+        }
+    }
+}
+
+img.avatar {
+    border: 0;
+    float: left;
+    position: relative;
+    border-radius: 3px;
+    border: 0;
+}
+
+div.comment-outer-wrapper {
+    margin-left: 60px;
+    padding: 3px;
+    background-color: #eee;
+}
+
+div.comment-inner-wrapper {
+    border: 1px solid #CACACA;
+    display: block;
+    margin: 0;
+    padding: 0;
+}
+
+div.comment-header {
+    padding: 0 0.2rem;
+    border-bottom: 1px solid #ccc;
+    background-color: #e1e1e1;
+    span.time {
+        float: right;
+    }
+}
+
+div.comment-body {
+    background-color: #fbfbfb;
+    padding: 0.4rem;
+    p + p {
+        margin-top: 0.4rem;
+    }
+}
