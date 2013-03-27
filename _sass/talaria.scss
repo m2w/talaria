@@ -8,6 +8,7 @@ div.comments-wrapper {
     font-size: 90%;
     h3 {
         display:inline-block;
+        margin-bottom: 0px;
     }
 }
 
@@ -27,6 +28,15 @@ div.comment-count {
     float: right;
     font-size: 90%;
     margin-bottom: 0.5rem;
+}
+
+div.comments {
+    width: 95%;
+}
+
+a.add-comment-link {
+    float:right;
+    margin-bottom: 1rem;
 }
 
 div.comment {
@@ -66,7 +76,7 @@ div.comment-inner-wrapper {
 }
 
 div.comment-header {
-    padding: 0 0.2rem;
+    padding: 0 0.4rem;
     border-bottom: 1px solid #ccc;
     background-color: #e1e1e1;
     span.time {
@@ -77,6 +87,7 @@ div.comment-header {
 div.comment-body {
     background-color: #fbfbfb;
     padding: 0.4rem;
+    position: relative;
     p + p {
         margin-top: 0.4rem;
     }
