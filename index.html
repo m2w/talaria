@@ -1,0 +1,93 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Talaria by m2w</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <script src="javascripts/scale.fix.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1>Talaria</h1>
+        <p>A commenting system for static content, hosted on github</p>
+        <p class="view"><a href="https://github.com/m2w/talaria">View the Project on GitHub <small>m2w/talaria</small></a></p>
+        <ul>
+          <li><a href="https://github.com/m2w/talaria/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/m2w/talaria/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/m2w/talaria">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
+        <p><em>talaria</em> is a commenting system for static content, such as github pages. It is based on github commit comments.</p>
+
+<h3>Getting started</h3>
+
+<p>Using talaria is straightforward. The following is an example of setting up <em>talaria</em> with a <a href="https://github.com/mojombo/jekyll">jekyll</a> based site. Unfortunately, github pages does not allow for symlinks. </p>
+
+<ol>
+<li><p>clone <em>talaria</em>: <code>git clone https://github.com/m2w/talaria.git</code></p></li>
+<li>
+<p>copy all relevant files into your site's directory. </p>
+
+<div class="highlight"><pre><span class="nb">echo</span> <span class="nv">$SITE_DIR</span> <span class="c"># /path/to/your/site</span>
+<span class="nb">echo</span> <span class="nv">$TALARIA_DIR</span> <span class="c"># /path/to/talaria</span>
+cp -i <span class="nv">$TALARIA_DIR</span>/_includes/* <span class="nv">$SITE_DIR</span>/_includes/
+cp -i <span class="nv">$TALARIA_DIR</span>/static/js/talaria.js <span class="nv">$SITE_DIR</span>/&lt;js_dir&gt;
+</pre></div>
+
+<p><em>talaria</em> uses <a href="http://compass-style.org/">compass</a> to generate its CSS. You have the choice:</p>
+
+<ol>
+<li>
+<code>cp -i $TALARIA_DIR/_sass/talaria.scss $SITE_DIR/&lt;sass_dir&gt;/_talaria.scss</code> and <code>@import "talaria";</code> in your main SASS file</li>
+<li><code>cp -i $TALARIA_DIR/static/css/talaria.css $SITE_DIR/&lt;css_dir&gt;</code></li>
+</ol>
+</li>
+<li><p>To be able to query the github API via AJAX, you need to <a href="https://github.com/settings/applications/new">register a github OAuth application</a> for your domain - see <a href="http://developer.github.com/v3/#cross-origin-resource-sharing">here</a></p></li>
+<li><p>Include <code>comments-placeholder.html</code> in your content container and <code>comments-template.html</code> in the footer of your base template. </p></li>
+<li>
+<p>Add links to <code>talaria.js</code> (and <code>talaria.css</code> if you are not using SASS/compass) as required in your templates. A fully rendered page should look structurally similar to the following:</p>
+
+<div class="highlight"><pre>...
+    <span class="nt">&lt;script </span><span class="na">type=</span><span class="s">"text/javascript"</span> <span class="na">src=</span><span class="s">"/path/to/talaria.js"</span><span class="nt">&gt;&lt;/script&gt;</span>
+    <span class="nt">&lt;link</span> <span class="na">href=</span><span class="s">"/static/css/talaria.css"</span> <span class="na">rel=</span><span class="s">"stylesheet"</span> <span class="na">type=</span><span class="s">"text/css"</span> <span class="nt">/&gt;</span>
+...
+    <span class="nt">&lt;article&gt;</span>
+        <span class="nt">&lt;header&gt;&lt;a</span> <span class="na">class=</span><span class="s">"permalink"</span> <span class="na">href=</span><span class="s">"/permalink-to-post"</span><span class="nt">&gt;</span>A post<span class="nt">&lt;/a&gt;&lt;/header&gt;</span>
+        ...
+        {% include comments-placeholder.html %}
+    <span class="nt">&lt;/article&gt;</span>
+...
+    <span class="nt">&lt;footer&gt;</span>
+        {% include comments-template.html %}
+    <span class="nt">&lt;/footer&gt;</span>
+...
+</pre></div>
+</li>
+<li><p>Customize <code>_talaria.scss</code> or <code>talaria.css</code> as required</p></li>
+</ol><h3>How does <em>talaria</em> work?</h3>
+
+<p>A very quick run-down is as follows: <em>talaria</em> locates all <code>a.permalinks</code> and assumes they are contained inside a parent <code>article</code> element. From there <em>talaria</em> uses the default jekyll permalink structure for posts (/:year/:month/:day/:title/) to extrapolate the name of the file that provides the content for the "article". It then queries the github API to find all commits that mention said file and then retrieves all comments on these commits. The comments are then rendered using the <code>comments-template.html</code> snippet and place/arranged using <code>comments-placeholder.html</code>.</p>
+
+<h3>What does <em>talaria</em> mean?</h3>
+
+<p>The name <em>talaria</em> comes from the <a href="http://en.wikipedia.org/wiki/Talaria">winged sandals</a> worn by Hermes in Greek mythology.</p>
+      </section>
+    </div>
+    <footer>
+      <p>Project maintained by <a href="https://github.com/m2w">m2w</a></p>
+      <p>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></p>
+    </footer>
+    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+    
+  </body>
+</html>
