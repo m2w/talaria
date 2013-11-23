@@ -1,6 +1,7 @@
 # What?
 
 _talaria_ is a commenting system for static content, such as github pages. Instead of github issues, it is based on commit comments.
+You can see it in action [here](http://blog.tibidat.com).
 
 The name _talaria_ comes from the [winged sandals](http://en.wikipedia.org/wiki/Talaria) worn by Hermes in Greek mythology.
 
@@ -17,4 +18,4 @@ See [m2w.github.com/talaria/](http://m2w.github.com/talaria/) for getting starte
 
 - [ ] review performance and caching
 - [ ] code cleanup
-- [ ] gracefull error handling (e.g. when exceeding the `X-RateLimit-Limit`)
+- [ ] gracefull error handling (e.g. when exceeding `X-RateLimit-Limit`)
