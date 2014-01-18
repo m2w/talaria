@@ -105,11 +105,13 @@ var maybeGetCachedVersion = function (url) {
 /* 
  * github API interaction 
  */
-var retrieveCommentsForCommit = function (commit) {
+var retrieveCommentsForCommit = function (commit, path) {
     'use strict';
     var dfd = new $.Deferred();
-    $.getJSON(COMMIT_API_ENDPOINT + '/' + commit.sha + '/comments').done(function (comments) {
-        dfd.resolveWith({ commits: commit, comments: comments });
+    $.getJSON(COMMIT_API_ENDPOINT + '/' + commit.sha + '/comments').then(function (comments) {
+        dfd.resolve({ commits: commit, comments: comments, path: path });
+    }, function (error) {
+        dfd.reject(error.status);
     });
     return dfd;
 };
@@ -117,13 +119,11 @@ var combineDataForFile = function (path, commits) {
     'use strict';
     var dfd = new $.Deferred(),
         deferred_comments = commits.map(function (commit) {
-            return retrieveCommentsForCommit(commit).done(function () {
-                this.path = path;
-                return this;
-            });
+            return retrieveCommentsForCommit(commit, path);
         });
-    $.when.apply(null, deferred_comments).done(function () {
-        var data = this,
+    
+    $.when.apply($, deferred_comments).done(function () {
+        var data = Array.prototype.slice.call(arguments, 0),
             root;
         if (data && data.length) {
             root = { path: path, commits: [], comments: [] };
@@ -133,35 +133,38 @@ var combineDataForFile = function (path, commits) {
                 return acc;
             }, root);
         }
-        dfd.resolveWith(data);
+        dfd.resolve(data);
     });
     return dfd;
 };
-var getDataForPathWithDeferred = function (path, dfd) {
+var getDataForPathWithDeferred = function (path) {
     'use strict';
+    var dfd = new $.Deferred();
     $.getJSON(COMMIT_API_ENDPOINT, { path: path }).then(function (commits) {
-        return combineDataForFile(path, commits);
-    }).done(function () {
-        dfd.resolveWith(this);
+        combineDataForFile(path, commits).done(function (dataForPath) {
+            dfd.resolve(dataForPath);    
+        });
+    }, function (error) {
+        dfd.reject(error.status);
     });
+    return dfd;
 };
 // returns a deferred object which holds all necessary commit and comment information for a specific permalink
 var retrieveDataForPermalink = function (url) {
     'use strict';
-    var wrapper_dfd = new $.Deferred(),
-        path = extrapolatePathFromPermalink(url),
+    var path = extrapolatePathFromPermalink(url),
         cache;
-    if (LOCAL_STORAGE_SUPPORTED) {
-        cache = maybeGetCachedVersion(url);
-        if (cache) {
-            wrapper_dfd.resolveWith(cache);
-        } else {
-            getDataForPathWithDeferred(path, wrapper_dfd);
-        }
-    } else {
-        getDataForPathWithDeferred(path, wrapper_dfd);
-    }
-    return wrapper_dfd;
+    // if (LOCAL_STORAGE_SUPPORTED) {
+    //     cache = maybeGetCachedVersion(url);
+    //     if (cache) {
+    //         wrapper_dfd.resolveWith(cache);
+    //     } else {
+    //         getDataForPathWithDeferred(path, wrapper_dfd);
+    //     }
+    // } else {
+        return getDataForPathWithDeferred(path);
+    // }
+    
 };
 
 /* 
@@ -172,10 +175,12 @@ var generateHtmlForComments = function (comment) {
     var now = new Date().getTime(),
         template_clone = $('#talaria-comment-placeholder').clone(),
         header = template_clone.find('div.talaria-comment-header');
-    template_clone.find('img').attr('src', comment.user.avatar_url);
+    template_clone.find('span.talaria-img-placeholder').replaceWith(
+        '<img class="talaria-comment-author-avatar" height="48" width="48" src="'+ comment.user.avatar_url +'" />');
     header.find('b').text(comment.user.login);
     header.find('a.talaria-author-nick').attr('href', comment.user.html_url);
-    header.find('a.talaria-commit-sha').attr('href', comment.html_url).html('<code>' + shortenCommitId(comment.commit_id) + '</code>');
+    header.find('a.talaria-commit-sha').attr('href', comment.html_url).html(
+        '<code>' + shortenCommitId(comment.commit_id) + '</code>');
     header.find('span.talaria-header-right').text(timeDifference(now, new Date(comment.updated_at)));
     template_clone.find('div.talaria-comment-body').html(comment.body_html);
     template_clone.attr('id', comment.id).show();
@@ -223,30 +228,37 @@ var updateCommentMeta = function (permalink_element, comment_data) {
         }
     });
 };
-
 $(document).ready(function () {
     'use strict';
-
     // check for local storage support
     if (localStorageSupported) {
         LOCAL_STORAGE_SUPPORTED = true;
     }
-
     // ensure that github returns fully rendered markup
     $.ajaxSetup({
         accepts: { json: 'application/vnd.github.v3.html+json' }
     });
-
     // iterate over permalinks and retrieve relevant commit and comment data
     $(PERMALINK_IDENTIFIER).map(function () {
         var permalink = this;
-        $.when(retrieveDataForPermalink(permalink.href)).then(function () {
-            var commentHtml = this.comments.sort(byAscendingDate).map(generateHtmlForComments);
-            updateCommentMeta($(permalink), this);
-            $(permalink).parents('article').find('div.talaria-comment-list').prepend(commentHtml);
-            if (LOCAL_STORAGE_SUPPORTED) {
-                sessionStorage.setItem(permalink.href, JSON.stringify({timestamp: new Date().getTime(), comment_data: this}));
+        $.when(retrieveDataForPermalink(permalink.href)).then(function (data) {
+            if ($.isEmptyObject(data)) {
+                var parent = $(permalink).parents('article');
+                parent.find('div.talaria-load-error').show();
+                parent.find('div.talaria-comment-count').hide();
+            } else {
+                var commentHtml = data.comments.sort(byAscendingDate).map(generateHtmlForComments);
+                updateCommentMeta($(permalink), data);
+                $(permalink).parents('article').find('div.talaria-comment-list').prepend(commentHtml);
+                if (LOCAL_STORAGE_SUPPORTED) {
+                    sessionStorage.setItem(permalink.href, JSON.stringify({timestamp: new Date().getTime(), comment_data: this}));
+                }
             }
+        }, function (status) {
+            var parent = $(permalink).parents('article');
+            parent.find('div.talaria-load-error').text(
+                'You have exceeded the github API request limit. Could not retrieve the comments.').show();
+            parent.find('div.talaria-comment-count').hide();
         });
     });
 });
