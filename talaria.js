@@ -13,11 +13,11 @@ var REPOSITORY_NAME = 'm2w.github.com',
     GITHUB_USERNAME = 'm2w',
     COMMENTABLE_CONTENT_PATH_PREFIX = '_posts/',
     CONTENT_SUFFIX = '.md',
-    LOCAL_STORAGE_SUPPORTED = false,
     CACHE_TIMEOUT = 10 * 60 * 1000, // cache github data for 10 minutes
-    COMMENT_API_ENDPOINT = 'https://api.github.com/repos/' + GITHUB_USERNAME + '/' + REPOSITORY_NAME + '/comments',
+    PAGINATION_SCHEME = /\/page\d+\//,
+    LOCAL_STORAGE_SUPPORTED = false,
     COMMIT_API_ENDPOINT = 'https://api.github.com/repos/' + GITHUB_USERNAME + '/' + REPOSITORY_NAME + '/commits',
-    REPO_COMMIT_URL_ROOT = 'https://github.com/' + GITHUB_USERNAME + '/' + REPOSITORY_NAME + '/commit/';
+    REPO_COMMIT_URL_ROOT = 'https://github.com/' + GITHUB_USERNAME + '/' + REPOSITORY_NAME + '/commit/',
     PERMALINK_IDENTIFIER = 'a.permalink';
 
 /* 
@@ -43,6 +43,7 @@ function localStorageSupported() {
     }
 }
 function byAscendingDate(commentA, commentB) {
+    'use strict';
     return new Date(commentA.updated_at) > new Date(commentB.updated_at);
 }
 /* 
@@ -89,7 +90,7 @@ var isStale = function (cached_comment_data) {
     'use strict';
     return (new Date().getTime() - cached_comment_data.timestamp) > CACHE_TIMEOUT;
 };
-var maybeGetCachedVersion = function(url) {
+var maybeGetCachedVersion = function (url) {
     'use strict';
     var cache = sessionStorage.getItem(url);
     if (cache) {
@@ -104,29 +105,29 @@ var maybeGetCachedVersion = function(url) {
 /* 
  * github API interaction 
  */
-var retrieveCommentsForCommit = function(commit) {
+var retrieveCommentsForCommit = function (commit) {
     'use strict';
     var dfd = new $.Deferred();
-    $.getJSON(COMMIT_API_ENDPOINT + '/' + commit.sha + '/comments').done(function(comments) {
+    $.getJSON(COMMIT_API_ENDPOINT + '/' + commit.sha + '/comments').done(function (comments) {
         dfd.resolveWith({ commits: commit, comments: comments });
     });
     return dfd;
 };
-var combineDataForFile = function(path, commits) {
+var combineDataForFile = function (path, commits) {
     'use strict';
     var dfd = new $.Deferred(),
-        deferred_comments = commits.map(function(commit) {
-            return retrieveCommentsForCommit(commit).done(function() {
+        deferred_comments = commits.map(function (commit) {
+            return retrieveCommentsForCommit(commit).done(function () {
                 this.path = path;
                 return this;
             });
         });
-    $.when.apply(null, deferred_comments).done(function() {
+    $.when.apply(null, deferred_comments).done(function () {
         var data = this,
             root;
         if (data && data.length) {
             root = { path: path, commits: [], comments: [] };
-            data = data.reduce(function(acc, elem) {
+            data = data.reduce(function (acc, elem) {
                 acc.commits = acc.commits.concat(elem.commits);
                 acc.comments = acc.comments.concat(elem.comments);
                 return acc;
@@ -136,16 +137,16 @@ var combineDataForFile = function(path, commits) {
     });
     return dfd;
 };
-var getDataForPathWithDeferred = function(path, dfd) {
+var getDataForPathWithDeferred = function (path, dfd) {
     'use strict';
-    $.getJSON(COMMIT_API_ENDPOINT, { path: path }).then(function(commits) {
+    $.getJSON(COMMIT_API_ENDPOINT, { path: path }).then(function (commits) {
         return combineDataForFile(path, commits);
-    }).done(function() {
+    }).done(function () {
         dfd.resolveWith(this);
     });
 };
 // returns a deferred object which holds all necessary commit and comment information for a specific permalink
-var retrieveDataForPermalink = function(url) {
+var retrieveDataForPermalink = function (url) {
     'use strict';
     var wrapper_dfd = new $.Deferred(),
         path = extrapolatePathFromPermalink(url),
@@ -166,7 +167,7 @@ var retrieveDataForPermalink = function(url) {
 /* 
  * HTML generators 
  */
-var generateHtmlForComments = function(comment) {
+var generateHtmlForComments = function (comment) {
     'use strict';
     var now = new Date().getTime(),
         template_clone = $('#talaria-comment-placeholder').clone(),
@@ -183,7 +184,7 @@ var generateHtmlForComments = function(comment) {
 /* 
  * HTML manipulators 
  */
-var updateCommentMeta = function(permalink_element, comment_data) {
+var updateCommentMeta = function (permalink_element, comment_data) {
     'use strict';
     var wrapper = permalink_element.parents('article').find('div.talaria-wrapper'),
         latest_commit,
@@ -191,7 +192,7 @@ var updateCommentMeta = function(permalink_element, comment_data) {
         c,
         text;
     if (comment_data.commits.length) {
-        latest_commit = comment_data.commits.sort(function(a, b) {
+        latest_commit = comment_data.commits.sort(function (a, b) {
             return new Date(a.commit.author.date) < new Date(b.commit.author.date);
         })[0];
     } else {
@@ -201,15 +202,14 @@ var updateCommentMeta = function(permalink_element, comment_data) {
     wrapper.find('a.talaria-last-commit-href').attr('href', latest_commit_url);
     if (comment_data.comments.length > 0) {
         // check if currently displaying paginated content
-        if (location.pathname === "/" || /\/page\d+\//.test(location.pathname)) {
+        if (location.pathname === "/" || PAGINATION_SCHEME.test(location.pathname)) {
             c = comment_data.comments.length;
             text = c + ' comment' + (c !== 1 ? 's' : '');
-            wrapper.find('a.talaria-expand-comments').attr('href', latest_commit_url)
-                .click(function(e) {
-                    e.preventDefault();
-                    wrapper.find('div.talaria-comment-list-wrapper').fadeIn();
-                    $(this).hide();
-                }).text(text);
+            wrapper.find('a.talaria-expand-comments').attr('href', latest_commit_url).click(function (e) {
+                e.preventDefault();
+                wrapper.find('div.talaria-comment-list-wrapper').fadeIn();
+                $(this).hide();
+            }).text(text);
         } else {
             wrapper.find('div.talaria-comment-count').hide();
             wrapper.find('div.talaria-comment-list-wrapper').fadeIn();
@@ -217,14 +217,14 @@ var updateCommentMeta = function(permalink_element, comment_data) {
     } else {
         wrapper.find('a.talaria-expand-comments').attr('href', latest_commit_url).text('Be the first to comment');
     }
-    wrapper.find('a.talaria-add-comment-button').attr('href', latest_commit_url).click(function(e){
+    wrapper.find('a.talaria-add-comment-button').attr('href', latest_commit_url).click(function () {
         if (LOCAL_STORAGE_SUPPORTED) {
             sessionStorage.removeItem(permalink_element.get(0).href);
         }
     });
 };
 
-$(document).ready(function() {
+$(document).ready(function () {
     'use strict';
 
     // check for local storage support
@@ -238,9 +238,9 @@ $(document).ready(function() {
     });
 
     // iterate over permalinks and retrieve relevant commit and comment data
-    $(PERMALINK_IDENTIFIER).map(function() {
+    $(PERMALINK_IDENTIFIER).map(function () {
         var permalink = this;
-        $.when(retrieveDataForPermalink(permalink.href)).then(function() {
+        $.when(retrieveDataForPermalink(permalink.href)).then(function () {
             var commentHtml = this.comments.sort(byAscendingDate).map(generateHtmlForComments);
             updateCommentMeta($(permalink), this);
             $(permalink).parents('article').find('div.talaria-comment-list').prepend(commentHtml);
