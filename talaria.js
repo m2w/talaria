@@ -18,11 +18,11 @@ var REPOSITORY_NAME = 'm2w.github.com',
     COMMENT_API_ENDPOINT = 'https://api.github.com/repos/' + GITHUB_USERNAME + '/' + REPOSITORY_NAME + '/comments',
     COMMIT_API_ENDPOINT = 'https://api.github.com/repos/' + GITHUB_USERNAME + '/' + REPOSITORY_NAME + '/commits',
     REPO_COMMIT_URL_ROOT = 'https://github.com/' + GITHUB_USERNAME + '/' + REPOSITORY_NAME + '/commit/';
+    PERMALINK_IDENTIFIER = 'a.permalink';
 
 /* 
  * Utilities 
  */
-
 function extrapolatePathFromPermalink(permalink_url) {
     'use strict';
     return permalink_url.replace(/[\.\w\-_:\/]+\/(\d+)\/(\d+)\/(\d+)\/([\w\-_]+)$/,
@@ -100,6 +100,7 @@ var maybeGetCachedVersion = function(url) {
     }
     return undefined;
 };
+
 /* 
  * github API interaction 
  */
@@ -161,23 +162,22 @@ var retrieveDataForPermalink = function(url) {
     }
     return wrapper_dfd;
 };
+
 /* 
  * HTML generators 
  */
 var generateHtmlForComments = function(comment) {
     'use strict';
     var now = new Date().getTime(),
-        template_clone = $('#comment-template').clone(),
-        header = template_clone.find('div.comment-header');
+        template_clone = $('#talaria-comment-bubble').clone(),
+        header = template_clone.find('div.talaria-comment-header');
     template_clone.find('img').attr('src', comment.user.avatar_url);
     header.find('b').text(comment.user.login);
-    header.find('a.profile-link').attr('href', comment.user.html_url);
-    header.find('a.changeset-link').attr('href', comment.html_url);
-    header.find('code.sha').text(shortenCommitId(comment.commit_id));
-    header.find('span.time').text(timeDifference(now, new Date(comment.updated_at)));
-    template_clone.find('div.comment-body').html(comment.body_html);
-    template_clone.attr('id', comment.id).addClass('comment');
-    template_clone.show();
+    header.find('a.talaria-author-nick').attr('href', comment.user.html_url);
+    header.find('a.talaria-commit-sha').attr('href', comment.html_url).html('<code>' + shortenCommitId(comment.commit_id) + '</code>');
+    header.find('span.talaria-header-right').text(timeDifference(now, new Date(comment.updated_at)));
+    template_clone.find('div.talaria-comment-body').html(comment.body_html);
+    template_clone.attr('id', comment.id).show();
     return template_clone;
 };
 /* 
@@ -185,7 +185,7 @@ var generateHtmlForComments = function(comment) {
  */
 var updateCommentMeta = function(permalink_element, comment_data) {
     'use strict';
-    var wrapper = permalink_element.parents('article').find('div.comments-wrapper'),
+    var wrapper = permalink_element.parents('article').find('div.talaria-comment-list'),
         latest_commit,
         latest_commit_url,
         c,
@@ -198,28 +198,28 @@ var updateCommentMeta = function(permalink_element, comment_data) {
         latest_commit = comment_data.commits;
     }
     latest_commit_url = REPO_COMMIT_URL_ROOT + latest_commit.sha + '#all_commit_comments';
-    wrapper.find('a.github-comments-link').attr('href', latest_commit_url);
+    wrapper.find('a.talaria-last-commit-href').attr('href', latest_commit_url);
     if (comment_data.comments.length > 0) {
         // check if currently displaying paginated content
         if (location.pathname === "/" || /\/page\d+\//.test(location.pathname)) {
             c = comment_data.comments.length;
             text = c + ' comment' + (c !== 1 ? 's' : '');
-            wrapper.find('div.comment-count a').attr('href', latest_commit_url)
+            wrapper.find('a.talaria-expand-comments').attr('href', latest_commit_url)
                 .click(function(e) {
                     e.preventDefault();
-                    wrapper.find('div.comments').fadeIn();
-                    wrapper.find('div.comments-header').show();
+                    wrapper.find('div.talaria-header').show();
+                    wrapper.find('div.talaria-comment-list').fadeIn();
                     $(this).hide();
                 }).text(text);
         } else {
-            wrapper.find('div.comments-header').show();
-            wrapper.find('div.comments').show();
+            wrapper.find('div.talaria-header').show();
+            wrapper.find('div.talaria-comment-list').show();
         }
     } else {
-        wrapper.find('div.comment-count a').attr('href', latest_commit_url).text('Be the first to comment');
-        wrapper.find('div.comments a.add-comment-link').hide();
+        wrapper.find('a.talaria-last-commit-href').attr('href', latest_commit_url).text('Be the first to comment');
+        wrapper.find('div.talaria-align-right').hide();
     }
-    wrapper.find('div.comments a.add-comment-link').attr('href', latest_commit_url).click(function(e){
+    wrapper.find('a.talaria-add-comment-button').attr('href', latest_commit_url).click(function(e){
         if (LOCAL_STORAGE_SUPPORTED) {
             sessionStorage.removeItem(permalink_element.get(0).href);
         }
@@ -236,16 +236,16 @@ $(document).ready(function() {
 
     // ensure that github returns fully rendered markup
     $.ajaxSetup({
-        accepts: { json: 'application/vnd.github.beta.html+json' }
+        accepts: { json: 'application/vnd.github.v3.html+json' }
     });
 
     // iterate over permalinks and retrieve relevant commit and comment data
-    $('a.permalink').map(function() {
+    $(PERMALINK_IDENTIFIER).map(function() {
         var permalink = this;
         $.when(retrieveDataForPermalink(permalink.href)).then(function() {
             var commentHtml = this.comments.sort(byAscendingDate).map(generateHtmlForComments);
             updateCommentMeta($(permalink), this);
-            $(permalink).parents('article').find('div.comments-wrapper div.comments').prepend(commentHtml);
+            $(permalink).parents('article').find('div.talaria-comment-list').prepend(commentHtml);
 
             if (LOCAL_STORAGE_SUPPORTED) {
                 sessionStorage.setItem(permalink.href, JSON.stringify({timestamp: new Date().getTime(), comment_data: this}));
