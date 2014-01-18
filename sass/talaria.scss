@@ -1,6 +1,16 @@
 @import "compass/css3/images";
 
+div#talaria-comment-placeholder {
+    display: none;
+}
+
 div.talaria-wrapper {
+    div {
+        margin: 0;
+    }
+    div.talaria-comment-count {
+        text-align: right;
+    }
     div.talaria-header {
         h3 {
             margin: 0;
@@ -17,9 +27,12 @@ div.talaria-wrapper {
         margin-bottom: 0.5rem;
     }
     div.talaria-comment-bubble {
-        margin-top: 1.5rem;
+        margin-top: 1rem;
         line-height: 1.4;
         font: 13px Helvetica, arial, freesans, clean, sans-serif;
+        + div.talaria-comment-bubble {
+            margin-top: 0.5rem;
+        }
     }
     code {
         color: #666;
@@ -32,7 +45,7 @@ div.talaria-wrapper {
     img {
         position: relative;
         float: left;
-        border-radius: 3px;
+        border-radius: 3px; 
     }
     div.talaria-comment-bubble-content {
         position: relative;
@@ -40,6 +53,9 @@ div.talaria-wrapper {
         padding: 3px;
         background: #eee;
         border-radius: 3px;
+    }
+    div.talaria-comment-body {
+        padding: 0.5rem;
     }
     div.talaria-comment-bubble-content:before {
         content: "";
@@ -57,6 +73,7 @@ div.talaria-wrapper {
         min-height: 32px;
         border: 1px solid #CACACA;
         background-color: #fff;
+        margin: 0px;
     }
     div.talaria-comment-header {
         height: 33px;

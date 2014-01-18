@@ -1,7 +1,4 @@
 <div class="talaria-wrapper">
-	<div class="talaria-header hide">
-		<h3>Comments <small>via <a class="talaria-last-commit-href" href="#">github</a></small></h3>
-	</div>
 	<div class="talaria-load-error hide">
 		An error occured while retrieving the comments.<br>
 		<small>You can still view comments for this article <a class="talaria-last-commit-href" href="#">directly on github</a>.</small>
@@ -9,8 +6,13 @@
 	<div class="talaria-comment-count">
 		<a class="talaria-expand-comments" href="#">number_of_comments</a>
 	</div>
-	<div class="talaria-comment-list hide">
-		<!-- comments are dynamically added here -->
+	<div class="talaria-comment-list-wrapper hide">
+		<div class="talaria-header">
+			<h3>Comments <small>via <a class="talaria-last-commit-href" href="#">github</a></small></h3>
+		</div>
+		<div class="talaria-comment-list">
+			<!-- comments are dynamically added here -->
+		</div>
 		<div class="talaria-align-right">
 			<a class="talaria-add-comment-button" href="#">
 				<button type="submit">Add a Comment</button>

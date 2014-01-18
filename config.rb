@@ -1,4 +1,4 @@
 css_dir = ""
 sass_dir = "sass"
-output_style = :compact
+output_style = :compressed
 line_comments = false

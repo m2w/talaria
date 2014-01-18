@@ -169,7 +169,7 @@ var retrieveDataForPermalink = function(url) {
 var generateHtmlForComments = function(comment) {
     'use strict';
     var now = new Date().getTime(),
-        template_clone = $('#talaria-comment-bubble').clone(),
+        template_clone = $('#talaria-comment-placeholder').clone(),
         header = template_clone.find('div.talaria-comment-header');
     template_clone.find('img').attr('src', comment.user.avatar_url);
     header.find('b').text(comment.user.login);
@@ -185,7 +185,7 @@ var generateHtmlForComments = function(comment) {
  */
 var updateCommentMeta = function(permalink_element, comment_data) {
     'use strict';
-    var wrapper = permalink_element.parents('article').find('div.talaria-comment-list'),
+    var wrapper = permalink_element.parents('article').find('div.talaria-wrapper'),
         latest_commit,
         latest_commit_url,
         c,
@@ -207,17 +207,15 @@ var updateCommentMeta = function(permalink_element, comment_data) {
             wrapper.find('a.talaria-expand-comments').attr('href', latest_commit_url)
                 .click(function(e) {
                     e.preventDefault();
-                    wrapper.find('div.talaria-header').show();
-                    wrapper.find('div.talaria-comment-list').fadeIn();
+                    wrapper.find('div.talaria-comment-list-wrapper').fadeIn();
                     $(this).hide();
                 }).text(text);
         } else {
-            wrapper.find('div.talaria-header').show();
-            wrapper.find('div.talaria-comment-list').show();
+            wrapper.find('div.talaria-comment-count').hide();
+            wrapper.find('div.talaria-comment-list-wrapper').fadeIn();
         }
     } else {
-        wrapper.find('a.talaria-last-commit-href').attr('href', latest_commit_url).text('Be the first to comment');
-        wrapper.find('div.talaria-align-right').hide();
+        wrapper.find('a.talaria-expand-comments').attr('href', latest_commit_url).text('Be the first to comment');
     }
     wrapper.find('a.talaria-add-comment-button').attr('href', latest_commit_url).click(function(e){
         if (LOCAL_STORAGE_SUPPORTED) {
@@ -246,7 +244,6 @@ $(document).ready(function() {
             var commentHtml = this.comments.sort(byAscendingDate).map(generateHtmlForComments);
             updateCommentMeta($(permalink), this);
             $(permalink).parents('article').find('div.talaria-comment-list').prepend(commentHtml);
-
             if (LOCAL_STORAGE_SUPPORTED) {
                 sessionStorage.setItem(permalink.href, JSON.stringify({timestamp: new Date().getTime(), comment_data: this}));
             }
