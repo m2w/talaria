@@ -8,6 +8,10 @@ div.talaria-wrapper {
     div {
         margin: 0;
     }
+    div.talaria-load-error {
+        background-color: #E8E8EE;
+        padding: 0.5rem;
+    }
     div.talaria-comment-count {
         text-align: right;
     }
