@@ -1,109 +1,92 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
   <head>
-    <meta charset='utf-8'>
+    <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-    <link href='https://fonts.googleapis.com/css?family=Architects+Daughter' rel='stylesheet' type='text/css'>
-    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen" />
-    <link rel="stylesheet" type="text/css" href="stylesheets/pygment_trac.css" media="screen" />
-    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print" />
-
-    <!--[if lt IE 9]>
-    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
-    <![endif]-->
-
     <title>Talaria by m2w</title>
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script src="javascripts/respond.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <!--[if lt IE 8]>
+    <link rel="stylesheet" href="stylesheets/ie.css">
+    <![endif]-->
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+
   </head>
-
   <body>
-    <header>
-      <div class="inner">
-        <h1>Talaria</h1>
-        <h2>A commenting system for static content, hosted on github</h2>
-        <a href="https://github.com/m2w/talaria" class="button"><small>View project on</small>GitHub</a>
-      </div>
-    </header>
+      <div id="header">
+        <nav>
+          <li class="fork"><a href="https://github.com/m2w/talaria">View On GitHub</a></li>
+          <li class="downloads"><a href="https://github.com/m2w/talaria/zipball/master">ZIP</a></li>
+          <li class="downloads"><a href="https://github.com/m2w/talaria/tarball/master">TAR</a></li>
+          <li class="title">DOWNLOADS</li>
+        </nav>
+      </div><!-- end header -->
 
-    <div id="content-wrapper">
-      <div class="inner clearfix">
-        <section id="main-content">
-          <p><em>talaria</em> is a commenting system for static content, such as github pages. It is based on github commit comments. You can see <em>talaria</em> in action <a href="http://blog.tibidat.com">here</a>.</p>
+    <div class="wrapper">
 
-<h3>
-<a name="getting-started" class="anchor" href="#getting-started"><span class="octicon octicon-link"></span></a>Getting started</h3>
+      <section>
+        <div id="title">
+          <h1>Talaria</h1>
+          <p>A commenting system for static content, hosted on github</p>
+          <hr>
+          <span class="credits left">Project maintained by <a href="https://github.com/m2w">m2w</a></span>
+          <span class="credits right">Hosted on GitHub Pages &mdash; Theme by <a href="https://twitter.com/michigangraham">mattgraham</a></span>
+        </div>
 
-<p>Using talaria is straightforward. The following is an example of setting up <em>talaria</em> with a <a href="https://github.com/mojombo/jekyll">jekyll</a> based site. Unfortunately, github pages does not allow for symlinks. </p>
+        <p><em>talaria</em> is a commenting system for static sites, notably github pages. It uses github commits to locate content and provide a way for others to comment. Check out talaria <a href="http://blog.tibidat.com">in action</a>.</p>
+
+<h2>
+<a name="requirements" class="anchor" href="#requirements"><span class="octicon octicon-link"></span></a>Requirements</h2>
+
+<p><em>talaria</em> requires jQuery and uses <code>&lt;article&gt;</code> elements to seperate content. Each of your individual content sources (e.g. blog post) should be wrapper in an <code>&lt;article&gt;</code> and contain a <code>a.permalink</code> (this can be customized) that links to a URL from which talaria can extrapolate the path of the content source (for a blog post this might be a markdown file).</p>
+
+<h2>
+<a name="first-step" class="anchor" href="#first-step"><span class="octicon octicon-link"></span></a>First step</h2>
+
+<p><em>talaria</em> comes with four essential components: <code>talaria.js</code>, <code>talaria.css</code> (or <code>talaria.scss</code> for sass users), <code>talaria-wrapper.html</code> and <code>talaria-comment.html</code>. Copy all four over to your static site.</p>
+
+<h2>
+<a name="tell-talaria-how-to-locate-your-content" class="anchor" href="#tell-talaria-how-to-locate-your-content"><span class="octicon octicon-link"></span></a>Tell talaria how to locate your content</h2>
+
+<p>Edit <code>talaria.js</code> so that it uses your <em>publicly available</em> repository. For this, update <code>REPOSITORY_NAME</code> and <code>GITHUB_USERNAME</code> accordingly. If required you can also modify <code>COMMENTABLE_CONTENT_PATH_PREFIX</code>, <code>CONTENT_SUFFIX</code> and <code>PERMALINK_IDENTIFIER</code>.</p>
+
+<h2>
+<a name="customize-the-looknfeel" class="anchor" href="#customize-the-looknfeel"><span class="octicon octicon-link"></span></a>Customize the look'n'feel</h2>
+
+<p>By default <em>talaria</em> comments are skinned to almost mirror their counterparts on github. However, not all parts of talaria are styled. Styling for things such as <code>&lt;a&gt;</code> and <code>&lt;code&gt;</code> are (currently) not provided. Feel free to customize this to suit your tastes.</p>
+
+<h2>
+<a name="add-talaria-to-your-site" class="anchor" href="#add-talaria-to-your-site"><span class="octicon octicon-link"></span></a>Add talaria to your site</h2>
+
+<p>This step requires that you modify your site (base) template. </p>
 
 <ol>
-<li><p>clone <em>talaria</em>: <code>git clone https://github.com/m2w/talaria.git</code></p></li>
-<li>
-<p>copy all relevant files into your site's directory. </p>
-
-<div class="highlight highlight-bash"><pre><span class="nb">echo</span> <span class="nv">$SITE_DIR</span> <span class="c"># /path/to/your/site</span>
-<span class="nb">echo</span> <span class="nv">$TALARIA_DIR</span> <span class="c"># /path/to/talaria</span>
-cp -i <span class="nv">$TALARIA_DIR</span>/_includes/* <span class="nv">$SITE_DIR</span>/_includes/
-cp -i <span class="nv">$TALARIA_DIR</span>/static/js/talaria.js <span class="nv">$SITE_DIR</span>/&lt;js_dir&gt;
-</pre></div>
-
-<p><em>talaria</em> uses <a href="http://compass-style.org/">compass</a> to generate its CSS. You have the choice:</p>
-
-<ol>
-<li>
-<code>cp -i $TALARIA_DIR/_sass/talaria.scss $SITE_DIR/&lt;sass_dir&gt;/_talaria.scss</code> and <code>@import "talaria";</code> in your main SASS file</li>
-<li><code>cp -i $TALARIA_DIR/static/css/talaria.css $SITE_DIR/&lt;css_dir&gt;</code></li>
-</ol>
+<li>Add the <em>contents</em> of <code>talaria-wrapper.html</code> whereever you want the comments to appear.</li>
+<li>Add the <em>contents</em> of <code>talaria-comment.html</code> anywhere in the <code>&lt;body&gt;</code> of your site.</li>
+<li>Add <code>&lt;link href="/path/to/talaria.css" rel="stylesheet" type="text/css"&gt;</code> (or add <code>@import talaria.scss;</code> in your main sass file) to your site's <code>&lt;head&gt;</code>
 </li>
-<li><p>To be able to query the github API via AJAX, you need to <a href="https://github.com/settings/applications/new">register a github OAuth application</a> for your domain - see <a href="http://developer.github.com/v3/#cross-origin-resource-sharing">here</a></p></li>
-<li><p>Include <code>comments-placeholder.html</code> in your content container and <code>comments-template.html</code> in the footer of your base template. </p></li>
-<li>
-<p>Add links to <code>talaria.js</code> (and <code>talaria.css</code> if you are not using SASS/compass) as required in your templates. A fully rendered page should look structurally similar to the following:</p>
-
-<div class="highlight highlight-html"><pre>...
-    <span class="nt">&lt;script </span><span class="na">type=</span><span class="s">"text/javascript"</span> <span class="na">src=</span><span class="s">"/path/to/talaria.js"</span><span class="nt">&gt;&lt;/script&gt;</span>
-    <span class="nt">&lt;link</span> <span class="na">href=</span><span class="s">"/static/css/talaria.css"</span> <span class="na">rel=</span><span class="s">"stylesheet"</span> <span class="na">type=</span><span class="s">"text/css"</span> <span class="nt">/&gt;</span>
-...
-    <span class="nt">&lt;article&gt;</span>
-        <span class="nt">&lt;header&gt;&lt;a</span> <span class="na">class=</span><span class="s">"permalink"</span> <span class="na">href=</span><span class="s">"/permalink-to-post"</span><span class="nt">&gt;</span>A post<span class="nt">&lt;/a&gt;&lt;/header&gt;</span>
-        ...
-        {% include comments-placeholder.html %}
-    <span class="nt">&lt;/article&gt;</span>
-...
-    <span class="nt">&lt;footer&gt;</span>
-        {% include comments-template.html %}
-    <span class="nt">&lt;/footer&gt;</span>
-...
-</pre></div>
+<li>Add <code>&lt;script type="text/javascript" src="/path/to/talaria.js"&gt;&lt;/script&gt;</code> to your site's <code>&lt;head&gt;</code>
 </li>
-<li><p>Customize <code>_talaria.scss</code> or <code>talaria.css</code> as required</p></li>
-</ol><h3>
-<a name="how-does-talaria-work" class="anchor" href="#how-does-talaria-work"><span class="octicon octicon-link"></span></a>How does <em>talaria</em> work?</h3>
+</ol><h2>
+<a name="fyi" class="anchor" href="#fyi"><span class="octicon octicon-link"></span></a>FYI</h2>
 
-<p>A very quick run-down is as follows: <em>talaria</em> locates all <code>a.permalinks</code> and assumes they are contained inside a parent <code>article</code> element. From there <em>talaria</em> uses the default jekyll permalink structure for posts (/:year/:month/:day/:title/) to extrapolate the name of the file that provides the content for the "article". It then queries the github API to find all commits that mention said file and then retrieves all comments on these commits. The comments are then rendered using the <code>comments-template.html</code> snippet and place/arranged using <code>comments-placeholder.html</code>.</p>
+<p>The github API is currently restricted to <em>60 API calls per hour</em> for unauthenticated users. This means that your users can retrieve comments for at most 30 entries. This number is lowered if you have multiple commits per 'content source file'; by 1 additional API request per additional commit (so if you have 3 commits for a the post <code>/2013/03/22/blog-relaunch</code>, talaria actually needs a total of 4 API calls to get all comments). talaria tries to use <code>sessionStorage</code> to reduce the total number of API calls, but users could potentially still run into <code>403</code> errors from throtteling, in which case talaria displays a simple error message.</p>
 
-<h3>
-<a name="what-does-talaria-mean" class="anchor" href="#what-does-talaria-mean"><span class="octicon octicon-link"></span></a>What does <em>talaria</em> mean?</h3>
+<p>Users clicking the "Add comment" buttons get redirected to github, where they can then login and comment. However, at this point I do not know of a way to get users back to your site after the redirect.</p>
 
-<p>The name <em>talaria</em> comes from the <a href="http://en.wikipedia.org/wiki/Talaria">winged sandals</a> worn by Hermes in Greek mythology.</p>
-        </section>
+<h2>
+<a name="trivia" class="anchor" href="#trivia"><span class="octicon octicon-link"></span></a>Trivia</h2>
 
-        <aside id="sidebar">
-          <a href="https://github.com/m2w/talaria/zipball/master" class="button">
-            <small>Download</small>
-            .zip file
-          </a>
-          <a href="https://github.com/m2w/talaria/tarball/master" class="button">
-            <small>Download</small>
-            .tar.gz file
-          </a>
+<p>talaria are the <a href="http://en.wikipedia.org/wiki/Talaria">winged sandals</a> worn by Hermes in Greek mythology.</p>
+      </section>
 
-          <p class="repo-owner"><a href="https://github.com/m2w/talaria"></a> is maintained by <a href="https://github.com/m2w">m2w</a>.</p>
-
-          <p>This page was generated by <a href="pages.github.com">GitHub Pages</a> using the Architect theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.</p>
-        </aside>
-      </div>
     </div>
-
-  
+    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+    
   </body>
 </html>
