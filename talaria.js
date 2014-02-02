@@ -13,7 +13,7 @@ var REPOSITORY_NAME = 'm2w.github.com',
     GITHUB_USERNAME = 'm2w',
     COMMENTABLE_CONTENT_PATH_PREFIX = '_posts/',
     CONTENT_SUFFIX = '.md',
-    CACHE_TIMEOUT = 10 * 60 * 1000, // cache github data for 10 minutes
+    CACHE_TIMEOUT = 60 * 60 * 1000, // cache github data for 1 hour
     PAGINATION_SCHEME = /\/page\d+\//,
     LOCAL_STORAGE_SUPPORTED = false,
     COMMIT_API_ENDPOINT = 'https://api.github.com/repos/' + GITHUB_USERNAME + '/' + REPOSITORY_NAME + '/commits',
@@ -101,7 +101,6 @@ var maybeGetCachedVersion = function (url) {
     }
     return undefined;
 };
-
 /* 
  * github API interaction 
  */
@@ -121,7 +120,6 @@ var combineDataForFile = function (path, commits) {
         deferred_comments = commits.map(function (commit) {
             return retrieveCommentsForCommit(commit, path);
         });
-    
     $.when.apply($, deferred_comments).done(function () {
         var data = Array.prototype.slice.call(arguments, 0),
             root;
@@ -149,24 +147,24 @@ var getDataForPathWithDeferred = function (path) {
     });
     return dfd;
 };
-// returns a deferred object which holds all necessary commit and comment information for a specific permalink
 var retrieveDataForPermalink = function (url) {
     'use strict';
     var path = extrapolatePathFromPermalink(url),
         cache;
-    // if (LOCAL_STORAGE_SUPPORTED) {
-    //     cache = maybeGetCachedVersion(url);
-    //     if (cache) {
-    //         wrapper_dfd.resolveWith(cache);
-    //     } else {
-    //         getDataForPathWithDeferred(path, wrapper_dfd);
-    //     }
-    // } else {
+    if (LOCAL_STORAGE_SUPPORTED) {
+        cache = maybeGetCachedVersion(url);
+        if (cache) {
+            console.log("using cached data");
+            var dfd = new $.Deferred();
+            dfd.resolve(cache);
+            return dfd;
+        } else {
+            return getDataForPathWithDeferred(path);
+        }
+    } else {
         return getDataForPathWithDeferred(path);
-    // }
-    
+    }
 };
-
 /* 
  * HTML generators 
  */
@@ -230,15 +228,12 @@ var updateCommentMeta = function (permalink_element, comment_data) {
 };
 $(document).ready(function () {
     'use strict';
-    // check for local storage support
     if (localStorageSupported) {
         LOCAL_STORAGE_SUPPORTED = true;
     }
-    // ensure that github returns fully rendered markup
     $.ajaxSetup({
         accepts: { json: 'application/vnd.github.v3.html+json' }
     });
-    // iterate over permalinks and retrieve relevant commit and comment data
     $(PERMALINK_IDENTIFIER).map(function () {
         var permalink = this;
         $.when(retrieveDataForPermalink(permalink.href)).then(function (data) {
@@ -251,7 +246,7 @@ $(document).ready(function () {
                 updateCommentMeta($(permalink), data);
                 $(permalink).parents('article').find('div.talaria-comment-list').prepend(commentHtml);
                 if (LOCAL_STORAGE_SUPPORTED) {
-                    sessionStorage.setItem(permalink.href, JSON.stringify({timestamp: new Date().getTime(), comment_data: this}));
+                    sessionStorage.setItem(permalink.href, JSON.stringify({timestamp: new Date().getTime(), comment_data: data}));
                 }
             }
         }, function (status) {
