@@ -14,7 +14,8 @@
     "ignore": [
 	"**/.*",
 	"bower_components",
-	".sass-cache",
+	"node_modules",
+	"gulpfile.js",
 	"config.rb"
     ]
 }
