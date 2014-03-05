@@ -6,8 +6,8 @@
  * content sites (e.g. github pages).
  */
 
-/* 
- * Configuration 
+/*
+ * Configuration
  */
 var REPOSITORY_NAME = 'm2w.github.com',
     GITHUB_USERNAME = 'm2w',
@@ -20,8 +20,8 @@ var REPOSITORY_NAME = 'm2w.github.com',
     REPO_COMMIT_URL_ROOT = 'https://github.com/' + GITHUB_USERNAME + '/' + REPOSITORY_NAME + '/commit/',
     PERMALINK_IDENTIFIER = 'a.permalink';
 
-/* 
- * Utilities 
+/*
+ * Utilities
  */
 function extrapolatePathFromPermalink(permalink_url) {
     'use strict';
@@ -46,7 +46,7 @@ function byAscendingDate(commentA, commentB) {
     'use strict';
     return new Date(commentA.updated_at) > new Date(commentB.updated_at);
 }
-/* 
+/*
  * timeDifference is taken from:
  * http://stackoverflow.com/questions/6108819/javascript-timestamp-to-relative-time-eg-2-seconds-ago-one-week-ago-etc-best
  * tweaks by me
@@ -101,8 +101,8 @@ var maybeGetCachedVersion = function (url) {
     }
     return undefined;
 };
-/* 
- * github API interaction 
+/*
+ * github API interaction
  */
 var retrieveCommentsForCommit = function (commit, path) {
     'use strict';
@@ -140,7 +140,7 @@ var getDataForPathWithDeferred = function (path) {
     var dfd = new $.Deferred();
     $.getJSON(COMMIT_API_ENDPOINT, { path: path }).then(function (commits) {
         combineDataForFile(path, commits).done(function (dataForPath) {
-            dfd.resolve(dataForPath);    
+            dfd.resolve(dataForPath);
         });
     }, function (error) {
         dfd.reject(error.status);
@@ -165,8 +165,8 @@ var retrieveDataForPermalink = function (url) {
         return getDataForPathWithDeferred(path);
     }
 };
-/* 
- * HTML generators 
+/*
+ * HTML generators
  */
 var generateHtmlForComments = function (comment) {
     'use strict';
@@ -184,8 +184,8 @@ var generateHtmlForComments = function (comment) {
     template_clone.attr('id', comment.id).show();
     return template_clone;
 };
-/* 
- * HTML manipulators 
+/*
+ * HTML manipulators
  */
 var updateCommentMeta = function (permalink_element, comment_data) {
     'use strict';
