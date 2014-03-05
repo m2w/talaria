@@ -1,0 +1,20 @@
+{
+    "name": "talaria",
+    "main": "talaria.js",
+    "version": "0.1.0",
+    "homepage": "https://github.com/m2w/talaria",
+    "authors": [
+	"Moritz <moritz@tibidat.com>"
+    ],
+    "description": "A commenting system for static sites based on github commit-comments",
+    "license": "MIT",
+    "dependencies": {
+	"jquery": "2.1.0"
+    },
+    "ignore": [
+	"**/.*",
+	"bower_components",
+	".sass-cache",
+	"config.rb"
+    ]
+}
