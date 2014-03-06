@@ -15,7 +15,6 @@
 	"**/.*",
 	"bower_components",
 	"node_modules",
-	"gulpfile.js",
 	"config.rb"
     ]
 }
