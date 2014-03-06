@@ -2,11 +2,13 @@ _talaria_ is a commenting system for static sites, like [github pages](http://pa
 
 ## Installation
 
-To install _talaria_ you have the choice between [bower](http://bower.io/)[[^1]]:
+To install _talaria_ you have the choice between [bower](http://bower.io/):
 
 ```bower install m2w/talaria```
 
 and a plain [download](https://github.com/m2w/talaria/releases/tag/0.1.0). Note that _talaria_ depends on [jQuery](http://jquery.com/).
+
+Note: _talaria_ isn't listed on the bower repository since it isn't a fully self-contained component as it requires modification before actual use.
 
 ## Getting started
 
@@ -40,7 +42,7 @@ Assuming you have installed _talaria_ with bower and are using jekyll, you shoul
 
 ### Customizing _talaria_'s behaviour 
 
-Edit `src/talaria.js` so that it points to your static site's _publicly available_ github repository - Update `REPOSITORY_NAME` and `GITHUB_USERNAME` accordingly[[^2]]. 
+Edit `src/talaria.js` so that it points to your static site's _publicly available_ github repository - Update `REPOSITORY_NAME` and `GITHUB_USERNAME` accordingly.
 
 If required you have a couple of other customization options:
 
@@ -50,6 +52,7 @@ If required you have a couple of other customization options:
 - `PAGINATION_SCHEME` (default `/\/page\d+\//`) _talaria_ uses this to check whether it should expand comments by default or not
 - `extrapolatePathFromPermalink(permalink_url)` handles the actual translation from URL to filename.
 
+This is one of the big TODOs for _talaria_: to make all configuration possible on your site instead of having to modify the source files.
 
 ### (optional) Customizing the look'n'feel
 
@@ -84,7 +87,3 @@ Users clicking the "Add comment" buttons get redirected to github, where they ca
 ## Trivia
 
 talaria are the [winged sandals](http://en.wikipedia.org/wiki/Talaria) worn by Hermes in Greek mythology.
-
-[^1]: _talaria_ isn't listed on the repository since it isn't a fully self-contained component as it requires modification before actual use
-[^2]: This is one of the big TODOs for _talaria_: to make all configuration possible on your site instead of having to modify the source files
-
