@@ -40,34 +40,11 @@ _talaria_ is composed of four components:
 
 Assuming you have installed _talaria_ with bower and are using jekyll, you should copy `bower_components/talaria/src/talaria*.html` to your `_includes` directory. Next you need to customize _talaria_ so that it knows where to find your content sources (such as your blog posts).
 
-### Customizing _talaria_'s behaviour 
-
-Edit `src/talaria.js` so that it points to your static site's _publicly available_ github repository - Update `REPOSITORY_NAME` and `GITHUB_USERNAME` accordingly.
-
-If required you have a couple of other customization options:
-
-- `COMMENTABLE_CONTENT_PATH_PREFIX` (default `_posts/`) relative prefix to your content source files
-- `CONTENT_SUFFIX` (default `.md`) this is used by _talaria_ during the extrapolation of the path to individual content sources
-- `PERMALINK_IDENTIFIER` (default `a.permalink`) this should be a valid jQuery selector that will be unique for each content source
-- `PAGINATION_SCHEME` (default `/\/page\d+\//`) _talaria_ uses this to check whether it should expand comments by default or not
-- `extrapolatePathFromPermalink(permalink_url)` handles the actual translation from URL to filename.
-
-This is one of the big TODOs for _talaria_: to make all configuration possible on your site instead of having to modify the source files.
-
 ### (optional) Customizing the look'n'feel
 
-By default _talaria_ comments are skinned to almost mirror their counterparts on github. However, not all parts of _talaria_ are styled. Styling for elements such as `<a>` and `<code>` is (currently) not provided. Feel free to customize this to suit your tastes.
+By default _talaria_ comments are skinned to almost mirror their counterparts on github. However, not all parts of _talaria_ are styled. Styling for elements such as `<a>` and `<code>` is (currently) not provided. Checkout `talaria.css` or `talaria.scss` and feel free to customize this to suit your tastes.
 
-### Finalizing the customization
-
-If you want to minimize your changes you can use the included `gulpfile.js`. The tasks have the following dependencies:
-
-- `gem install sass`
-- `npm install gulp gulp-uglify gulp-ruby-sass gulp-js-hint`
-
-After installing these you can just run `gulp` in the `bower_components/talaria` directory to compile & minimize your changes. These will then all be available in `bower_components/talaria/dist`
-
-## Finishing up
+## Setting up
 
 This step requires that you modify your site's (base) template. 
 
@@ -75,6 +52,18 @@ This step requires that you modify your site's (base) template.
 2. Add `{% include talaria-comment.html %} anywhere in your site's `<body>` - fear not, this is `display:none`
 3. Add `<link href="/bower_components/talaria/dist/talaria.css" rel="stylesheet" type="text/css">` (or add an `@import` statement for the SASS in your main sass file)
 4. Add `<script type="text/javascript" src="/bower_components/talaria/dist/talaria.js"></script>` (after jQuery!)
+5. *After* including `talaria.js` call `talaria.init(CONFIG)` at some point, where `CONFIG` is an object that *must* contain appropriate values for `REPOSITORY_NAME` and `GITHUB_USERNAME`. For example:
+
+```js
+talaria.init({REPOSITORY_NAME: 'm2w.github.com', GITHUB_USERNAME: 'm2w'});
+```
+
+If required you have a couple of further customization options, include these as required in your `CONFIG` object:
+
+- `COMMENTABLE_CONTENT_PATH_PREFIX` (default `_posts/`) relative prefix to your content source files
+- `CONTENT_SUFFIX` (default `.md`) this is used by _talaria_ during the extrapolation of the path to individual content sources
+- `PERMALINK_IDENTIFIER` (default `a.permalink`) this should be a valid jQuery selector that will be unique for each content source
+- `PAGINATION_SCHEME` (default `/\/page\d+\//`) _talaria_ uses this to check whether it should expand comments by default or not
 
 You're now done, test the setup to ensure everything is working fine and report any bugs :)
 
