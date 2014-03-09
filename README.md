@@ -6,9 +6,9 @@ To install _talaria_ you have the choice between [bower](http://bower.io/):
 
 ```bower install m2w/talaria```
 
-and a plain [download](https://github.com/m2w/talaria/releases/tag/0.1.0). Note that _talaria_ depends on [jQuery](http://jquery.com/).
+and a plain [download](https://github.com/m2w/talaria/releases/tag/0.2.0). Note that _talaria_ depends on [jQuery](http://jquery.com/).
 
-Note: _talaria_ isn't listed on the bower repository since it isn't a fully self-contained component as it requires modification before actual use.
+Note: _talaria_ isn't yet listed on the bower repository.
 
 ## Getting started
 
