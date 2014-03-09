@@ -38,44 +38,93 @@
           <span class="credits right">Hosted on GitHub Pages &mdash; Theme by <a href="https://twitter.com/michigangraham">mattgraham</a></span>
         </div>
 
-        <p><em>talaria</em> is a commenting system for static sites, notably github pages. It uses github commits to locate content and provide a way for others to comment. Check out talaria <a href="http://blog.tibidat.com">in action</a>.</p>
+        <p><em>talaria</em> is a commenting system for static sites, like <a href="http://pages.github.com/">github pages</a>. It uses github commits to locate content and provide a way for others to comment. Check out talaria <a href="http://blog.tibidat.com">in action</a>.</p>
 
 <h2>
-<a name="requirements" class="anchor" href="#requirements"><span class="octicon octicon-link"></span></a>Requirements</h2>
+<a name="installation" class="anchor" href="#installation"><span class="octicon octicon-link"></span></a>Installation</h2>
 
-<p><em>talaria</em> requires jQuery and uses <code>&lt;article&gt;</code> elements to seperate content. Each of your individual content sources (e.g. blog post) should be wrapper in an <code>&lt;article&gt;</code> and contain a <code>a.permalink</code> (this can be customized) that links to a URL from which talaria can extrapolate the path of the content source (for a blog post this might be a markdown file).</p>
+<p>To install <em>talaria</em> you have the choice between <a href="http://bower.io/">bower</a>:</p>
 
-<h2>
-<a name="first-step" class="anchor" href="#first-step"><span class="octicon octicon-link"></span></a>First step</h2>
+<p><code>bower install m2w/talaria</code></p>
 
-<p><em>talaria</em> comes with four essential components: <code>talaria.js</code>, <code>talaria.css</code> (or <code>talaria.scss</code> for sass users), <code>talaria-wrapper.html</code> and <code>talaria-comment.html</code>. Copy all four over to your static site.</p>
+<p>and a plain <a href="https://github.com/m2w/talaria/releases/tag/0.2.0">download</a>. Note that <em>talaria</em> depends on <a href="http://jquery.com/">jQuery</a>.</p>
 
-<h2>
-<a name="tell-talaria-how-to-locate-your-content" class="anchor" href="#tell-talaria-how-to-locate-your-content"><span class="octicon octicon-link"></span></a>Tell talaria how to locate your content</h2>
-
-<p>Edit <code>talaria.js</code> so that it uses your <em>publicly available</em> repository. For this, update <code>REPOSITORY_NAME</code> and <code>GITHUB_USERNAME</code> accordingly. If required you can also modify <code>COMMENTABLE_CONTENT_PATH_PREFIX</code>, <code>CONTENT_SUFFIX</code> and <code>PERMALINK_IDENTIFIER</code>.</p>
+<p>Note: <em>talaria</em> isn't yet listed on the bower repository.</p>
 
 <h2>
-<a name="customize-the-looknfeel" class="anchor" href="#customize-the-looknfeel"><span class="octicon octicon-link"></span></a>Customize the look'n'feel</h2>
+<a name="getting-started" class="anchor" href="#getting-started"><span class="octicon octicon-link"></span></a>Getting started</h2>
 
-<p>By default <em>talaria</em> comments are skinned to almost mirror their counterparts on github. However, not all parts of talaria are styled. Styling for things such as <code>&lt;a&gt;</code> and <code>&lt;code&gt;</code> are (currently) not provided. Feel free to customize this to suit your tastes.</p>
+<p><em>talaria</em> makes some assumptions about how your DOM is structured. It assumes that:</p>
+
+<ul>
+<li>every commentable content source (for example a blog post) is wrapped in an <code>&lt;article&gt;</code>
+</li>
+<li>these <code>&lt;article&gt;</code> contain one distinct element (a permalink) that points to an URL that can be used to extrapolate the actual file name of the content.</li>
+</ul><p>What does that mean? Here is an example layout that would satisfy <em>talaria</em>'s needs.</p>
+
+<div class="highlight highlight-html"><pre><span class="nt">&lt;body&gt;</span>
+...
+<span class="nt">&lt;article&gt;</span>
+<span class="nt">&lt;a</span> <span class="na">class=</span><span class="s">"permalink"</span> <span class="na">href=</span><span class="s">"/2014/02/06/a-blog-post"</span><span class="nt">&gt;</span>A blog post!<span class="nt">&lt;/a&gt;</span>
+<span class="nt">&lt;p&gt;</span>My awesome unstyled one line blog post :D<span class="nt">&lt;/p&gt;</span>
+<span class="nt">&lt;/article&gt;</span>
+...
+<span class="nt">&lt;/body&gt;</span>
+</pre></div>
 
 <h2>
-<a name="add-talaria-to-your-site" class="anchor" href="#add-talaria-to-your-site"><span class="octicon octicon-link"></span></a>Add talaria to your site</h2>
+<a name="getting-started-for-real" class="anchor" href="#getting-started-for-real"><span class="octicon octicon-link"></span></a>Getting started for real</h2>
 
-<p>This step requires that you modify your site (base) template. </p>
+<p><em>talaria</em> is composed of four components: </p>
+
+<ul>
+<li>
+<code>talaria.js</code> which contains the logic to interact with the <a href="http://developer.github.com/v3/">github API</a>
+</li>
+<li>
+<code>talaria.css</code> (or <code>talaria.scss</code> for <a href="http://sass-lang.com/">SASS</a> users) which provide a basic github-esque styling for the comments</li>
+<li>
+<code>talaria-wrapper.html</code> and <code>talaria-comment.html</code>, template fragements for the comment section and individual comments respectively </li>
+</ul><p>Assuming you have installed <em>talaria</em> with bower and are using jekyll, you should copy <code>bower_components/talaria/src/talaria*.html</code> to your <code>_includes</code> directory. Next you need to customize <em>talaria</em> so that it knows where to find your content sources (such as your blog posts).</p>
+
+<h3>
+<a name="optional-customizing-the-looknfeel" class="anchor" href="#optional-customizing-the-looknfeel"><span class="octicon octicon-link"></span></a>(optional) Customizing the look'n'feel</h3>
+
+<p>By default <em>talaria</em> comments are skinned to almost mirror their counterparts on github. However, not all parts of <em>talaria</em> are styled. Styling for elements such as <code>&lt;a&gt;</code> and <code>&lt;code&gt;</code> is (currently) not provided. Checkout <code>talaria.css</code> or <code>talaria.scss</code> and feel free to customize this to suit your tastes.</p>
+
+<h2>
+<a name="setting-up" class="anchor" href="#setting-up"><span class="octicon octicon-link"></span></a>Setting up</h2>
+
+<p>This step requires that you modify your site's (base) template. </p>
 
 <ol>
-<li>Add the <em>contents</em> of <code>talaria-wrapper.html</code> whereever you want the comments to appear.</li>
-<li>Add the <em>contents</em> of <code>talaria-comment.html</code> anywhere in the <code>&lt;body&gt;</code> of your site.</li>
-<li>Add <code>&lt;link href="/path/to/talaria.css" rel="stylesheet" type="text/css"&gt;</code> (or add <code>@import talaria.scss;</code> in your main sass file) to your site's <code>&lt;head&gt;</code>
+<li>Add <code>{% include talaria-wrapper.html %}</code> inside your content's <code>&lt;article&gt;</code>
 </li>
-<li>Add <code>&lt;script type="text/javascript" src="/path/to/talaria.js"&gt;&lt;/script&gt;</code> to your site's <code>&lt;head&gt;</code>
-</li>
-</ol><h2>
+<li>Add <code>{% include talaria-comment.html %} anywhere in your site's</code><code>- fear not, this is</code>display:none`</li>
+<li>Add <code>&lt;link href="/bower_components/talaria/dist/talaria.css" rel="stylesheet" type="text/css"&gt;</code> (or add an <code>@import</code> statement for the SASS in your main sass file)</li>
+<li>Add <code>&lt;script type="text/javascript" src="/bower_components/talaria/dist/talaria.js"&gt;&lt;/script&gt;</code> (after jQuery!)</li>
+<li>
+<em>After</em> including <code>talaria.js</code> call <code>talaria.init(CONFIG)</code> at some point, where <code>CONFIG</code> is an object that <em>must</em> contain appropriate values for <code>REPOSITORY_NAME</code> and <code>GITHUB_USERNAME</code>. For example:</li>
+</ol><div class="highlight highlight-js"><pre><span class="nx">talaria</span><span class="p">.</span><span class="nx">init</span><span class="p">({</span><span class="nx">REPOSITORY_NAME</span><span class="o">:</span> <span class="s1">'m2w.github.com'</span><span class="p">,</span> <span class="nx">GITHUB_USERNAME</span><span class="o">:</span> <span class="s1">'m2w'</span><span class="p">});</span>
+</pre></div>
+
+<p>If required you have a couple of further customization options, include these as required in your <code>CONFIG</code> object:</p>
+
+<ul>
+<li>
+<code>COMMENTABLE_CONTENT_PATH_PREFIX</code> (default <code>_posts/</code>) relative prefix to your content source files</li>
+<li>
+<code>CONTENT_SUFFIX</code> (default <code>.md</code>) this is used by <em>talaria</em> during the extrapolation of the path to individual content sources</li>
+<li>
+<code>PERMALINK_IDENTIFIER</code> (default <code>a.permalink</code>) this should be a valid jQuery selector that will be unique for each content source</li>
+<li>
+<code>PAGINATION_SCHEME</code> (default <code>/\/page\d+\//</code>) <em>talaria</em> uses this to check whether it should expand comments by default or not</li>
+</ul><p>You're now done, test the setup to ensure everything is working fine and report any bugs :)</p>
+
+<h2>
 <a name="fyi" class="anchor" href="#fyi"><span class="octicon octicon-link"></span></a>FYI</h2>
 
-<p>The github API is currently restricted to <em>60 API calls per hour</em> for unauthenticated users. This means that your users can retrieve comments for at most 30 entries. This number is lowered if you have multiple commits per 'content source file'; by 1 additional API request per additional commit (so if you have 3 commits for a the post <code>/2013/03/22/blog-relaunch</code>, talaria actually needs a total of 4 API calls to get all comments). talaria tries to use <code>sessionStorage</code> to reduce the total number of API calls, but users could potentially still run into <code>403</code> errors from throtteling, in which case talaria displays a simple error message.</p>
+<p>The github API is currently restricted to <em>60 API calls per hour</em> for unauthenticated users. This means that your users can retrieve comments for at most 30 entries. This number is lower if you have multiple commits per 'content source file'; it costs 1 additional API request per additional commit (so if you have 3 commits for a the post <code>/2013/03/22/blog-relaunch</code>, <em>talaria</em> actually needs a total of 4 API calls to get all comments). <em>talaria</em> tries to use <code>sessionStorage</code> to reduce the total number of API calls, but users could potentially still run into <code>403</code> errors from throtteling, in which case <em>talaria</em> displays a simple error message.</p>
 
 <p>Users clicking the "Add comment" buttons get redirected to github, where they can then login and comment. However, at this point I do not know of a way to get users back to your site after the redirect.</p>
 
