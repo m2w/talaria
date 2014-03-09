@@ -19,7 +19,7 @@ var talaria = (function ($) {
      * Utilities
      */
     function extrapolatePathFromPermalink(permalink_url) {
-        return permalink_url.replace(/[\.\w\-_:\/]+\/(\d+)\/(\d+)\/(\d+)\/([\w\-_]+)$/,
+        return permalink_url.replace(/[\.\w\-_:\/]+\/(\d+)\/(\d+)\/(\d+)\/([\w\-_\.]+)$/,
             CONFIG.COMMENTABLE_CONTENT_PATH_PREFIX + '$1-$2-$3-$4' + CONFIG.CONTENT_SUFFIX);
     }
 
