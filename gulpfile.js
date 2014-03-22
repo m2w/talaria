@@ -4,7 +4,7 @@ var rename = require('gulp-rename');
 var sass = require('gulp-ruby-sass');
 var jshint = require('gulp-jshint');
 
-gulp.task('default', ['compress', 'sass']);
+gulp.task('default', ['compress', 'copy', 'sass']);
 
 gulp.task('watch', function() {
     gulp.watch('./src/*.js', ['lint']);
@@ -23,6 +23,11 @@ gulp.task('compress', function() {
     gulp.src('./src/talaria.js')
         .pipe(uglify({outSourceMap: true}))
         .pipe(rename('talaria.min.js'))
+        .pipe(gulp.dest('./dist'));
+});
+
+gulp.task('copy', function() {
+    gulp.src('./src/talaria.js')
         .pipe(gulp.dest('./dist'));
 });
 
