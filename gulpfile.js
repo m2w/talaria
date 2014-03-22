@@ -19,11 +19,11 @@ gulp.task('sass', function() {
         .pipe(gulp.dest('./dist'));
 });
 
-gulp.task('compress', function(){
+gulp.task('compress', function() {
     gulp.src('./src/talaria.js')
         .pipe(uglify({outSourceMap: true}))
         .pipe(rename('talaria.min.js'))
-        .pipe(gulp.dest('dist'));
+        .pipe(gulp.dest('./dist'));
 });
 
 gulp.task('lint', function() {
