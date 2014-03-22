@@ -1,1 +1,281 @@
-var talaria=function(t){"use strict";function e(t){return t.replace(/[\.\w\-_:\/]+\/(\d+)\/(\d+)\/(\d+)\/([\w\-_\.]+)$/,f.COMMENTABLE_CONTENT_PATH_PREFIX+"$1-$2-$3-$4"+f.CONTENT_SUFFIX)}function a(t){return t.substr(0,7)}function n(){try{return sessionStorage.setItem("dummy","dummy"),sessionStorage.removeItem("dummy"),!0}catch(t){return!1}}function r(t,e){return new Date(t.updated_at)>new Date(e.updated_at)}function i(t,e){function a(t){return 1===t?"":"s"}var n=6e4,r=60*n,i=24*r,o=30*i,m=365*i,c=15e3,s=t-e,u=0;return n>s?c>s?" just now":Math.round(s/1e3)+" seconds ago":r>s?(u=Math.round(s/n),u+" minute"+a(u)+" ago"):i>s?(u=Math.round(s/r),u+" hour"+a(u)+" ago"):o>s?(u=Math.round(s/i),u+" day"+a(u)+" ago"):m>s?(u=Math.round(s/o),"about "+u+" month"+a(u)+" ago"):(u=Math.round(s/m),"about "+u+" year"+a(u)+" ago")}function o(t){return(new Date).getTime()-t.timestamp>f.CACHE_TIMEOUT}function m(t){var e=sessionStorage.getItem(t);return e&&(e=JSON.parse(e),!o(e))?e.comment_data:void 0}function c(e,a){var n=new t.Deferred;return t.getJSON(f.COMMIT_API_ENDPOINT+"/"+e.sha+"/comments").then(function(t){n.resolve({commits:e,comments:t,path:a})},function(t){n.reject(t.status)}),n}function s(e,a){var n=new t.Deferred,r=a.map(function(t){return c(t,e)});return t.when.apply(t,r).done(function(){var t,a=Array.prototype.slice.call(arguments,0);a&&a.length&&(t={path:e,commits:[],comments:[]},a=a.reduce(function(t,e){return t.commits=t.commits.concat(e.commits),t.comments=t.comments.concat(e.comments),t},t)),n.resolve(a)}),n}function u(e){var a=new t.Deferred;return t.getJSON(f.COMMIT_API_ENDPOINT,{path:e}).then(function(t){s(e,t).done(function(t){a.resolve(t)})},function(t){a.reject(t.status)}),a}function d(a){var n,r=e(a);if(f.LOCAL_STORAGE_SUPPORTED){if(n=m(a)){var i=new t.Deferred;return i.resolve(n),i}return u(r)}return u(r)}function h(e){var n=(new Date).getTime(),r=t("#talaria-comment-placeholder").clone(),o=r.find("div.talaria-comment-header");return r.find("span.talaria-img-placeholder").replaceWith('<img class="talaria-comment-author-avatar" height="48" width="48" src="'+e.user.avatar_url+'" />'),o.find("b").text(e.user.login),o.find("a.talaria-author-nick").attr("href",e.user.html_url),o.find("a.talaria-commit-sha").attr("href",e.html_url).html("<code>"+a(e.commit_id)+"</code>"),o.find("span.talaria-header-right").text(i(n,new Date(e.updated_at))),r.find("div.talaria-comment-body").html(e.body_html),r.attr("id",e.id).show(),r}function l(e,a){var n,r,i,o,m=e.parents("article").find("div.talaria-wrapper");n=a.commits.length?a.commits.sort(function(t,e){return new Date(t.commit.author.date)<new Date(e.commit.author.date)})[0]:a.commits,r=f.REPO_COMMIT_URL_ROOT+n.sha+"#all_commit_comments",m.find("a.talaria-last-commit-href").attr("href",r),a.comments.length>0?"/"===location.pathname||f.PAGINATION_SCHEME.test(location.pathname)?(i=a.comments.length,o=i+" comment"+(1!==i?"s":""),m.find("a.talaria-expand-comments").attr("href",r).click(function(e){e.preventDefault(),m.find("div.talaria-comment-list-wrapper").fadeIn(),t(this).hide()}).text(o)):(m.find("div.talaria-comment-count").hide(),m.find("div.talaria-comment-list-wrapper").fadeIn()):m.find("a.talaria-expand-comments").attr("href",r).text("Be the first to comment"),m.find("a.talaria-add-comment-button").attr("href",r).click(function(){f.LOCAL_STORAGE_SUPPORTED&&sessionStorage.removeItem(e.get(0).href)})}var f={},_={COMMENTABLE_CONTENT_PATH_PREFIX:"_posts/",CONTENT_SUFFIX:".md",CACHE_TIMEOUT:36e5,PAGINATION_SCHEME:/\/page\d+\//,LOCAL_STORAGE_SUPPORTED:!1,PERMALINK_IDENTIFIER:"a.permalink"},p=function(e){f=t.extend({},_,e),f.COMMIT_API_ENDPOINT="https://api.github.com/repos/"+f.GITHUB_USERNAME+"/"+f.REPOSITORY_NAME+"/commits",f.REPO_COMMIT_URL_ROOT="https://github.com/"+f.GITHUB_USERNAME+"/"+f.REPOSITORY_NAME+"/commit/",t(document).ready(function(){n&&(f.LOCAL_STORAGE_SUPPORTED=!0),t.ajaxSetup({accepts:{json:"application/vnd.github.v3.html+json"}}),t(f.PERMALINK_IDENTIFIER).map(function(){var e=this;t.when(d(e.href)).then(function(a){if(t.isEmptyObject(a)){var n=t(e).parents("article");n.find("div.talaria-load-error").show(),n.find("div.talaria-comment-count").hide()}else{var i=a.comments.sort(r).map(h);l(t(e),a),t(e).parents("article").find("div.talaria-comment-list").prepend(i),f.LOCAL_STORAGE_SUPPORTED&&sessionStorage.setItem(e.href,JSON.stringify({timestamp:(new Date).getTime(),comment_data:a}))}},function(){var a=t(e).parents("article");a.find("div.talaria-load-error").text("You have exceeded the github API request limit. Could not retrieve the comments.").show(),a.find("div.talaria-comment-count").hide()})})})};return{init:p}}($);
+/*global document,$,sessionStorage,location*/
+var talaria = (function ($) {
+    'use strict';
+
+    /*
+     * Default config
+     */
+    var CONFIG = {},
+        DEFAULTS = {
+            COMMENTABLE_CONTENT_PATH_PREFIX: '_posts/',
+            CONTENT_SUFFIX: '.md',
+            CACHE_TIMEOUT: 60 * 60 * 1000, // cache github data for 1 hour
+            PAGINATION_SCHEME: /\/page\d+\//,
+            LOCAL_STORAGE_SUPPORTED: false,
+            PERMALINK_IDENTIFIER: 'a.permalink'
+        };
+
+    /*
+     * Utilities
+     */
+    function extrapolatePathFromPermalink(permalink_url) {
+        return permalink_url.replace(/[\.\w\-_:\/]+\/(\d+)\/(\d+)\/(\d+)\/([\w\-_\.]+)$/,
+            CONFIG.COMMENTABLE_CONTENT_PATH_PREFIX + '$1-$2-$3-$4' + CONFIG.CONTENT_SUFFIX);
+    }
+
+    function shortenCommitId(commit_id) {
+        return commit_id.substr(0, 7);
+    }
+
+    function localStorageSupported() {
+        try {
+            sessionStorage.setItem("dummy", "dummy");
+            sessionStorage.removeItem("dummy");
+            return true;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    function byAscendingDate(commentA, commentB) {
+        return new Date(commentA.updated_at) > new Date(commentB.updated_at);
+    }
+
+    /*
+     * timeDifference is taken from:
+     * http://stackoverflow.com/questions/6108819/javascript-timestamp-to-relative-time-eg-2-seconds-ago-one-week-ago-etc-best
+     * tweaks by me
+     */
+    function timeDifference(current, previous) {
+        function maybePluralize(elapsed) {
+            return elapsed === 1 ? '' : 's';
+        }
+        var msPerMinute = 60 * 1000,
+            msPerHour = msPerMinute * 60,
+            msPerDay = msPerHour * 24,
+            msPerMonth = msPerDay * 30,
+            msPerYear = msPerDay * 365,
+            justNowLim = 15 * 1000,
+            elapsed = current - previous,
+            t = 0;
+        if (elapsed < msPerMinute) {
+            return elapsed < justNowLim ? ' just now' : Math.round(elapsed / 1000) + ' seconds ago';
+        }
+        if (elapsed < msPerHour) {
+            t = Math.round(elapsed / msPerMinute);
+            return t + ' minute' + maybePluralize(t) + ' ago';
+        }
+        if (elapsed < msPerDay) {
+            t = Math.round(elapsed / msPerHour);
+            return t + ' hour' + maybePluralize(t) + ' ago';
+        }
+        if (elapsed < msPerMonth) {
+            t = Math.round(elapsed / msPerDay);
+            return t + ' day' + maybePluralize(t) + ' ago';
+        }
+        if (elapsed < msPerYear) {
+            t = Math.round(elapsed / msPerMonth);
+            return 'about ' + t + ' month' + maybePluralize(t) + ' ago';
+        }
+        t = Math.round(elapsed / msPerYear);
+        return 'about ' + t + ' year' + maybePluralize(t) + ' ago';
+    }
+
+    function isStale(cached_comment_data) {
+        return (new Date().getTime() - cached_comment_data.timestamp) > CONFIG.CACHE_TIMEOUT;
+    }
+
+    function maybeGetCachedVersion(url) {
+        var cache = sessionStorage.getItem(url);
+        if (cache) {
+            cache = JSON.parse(cache);
+            if (!isStale(cache)) {
+                return cache.comment_data;
+            }
+        }
+        return undefined;
+    }
+
+    /*
+     * github API interaction
+     */
+    function retrieveCommentsForCommit(commit, path) {
+        var dfd = new $.Deferred();
+        $.getJSON(CONFIG.COMMIT_API_ENDPOINT + '/' + commit.sha + '/comments').then(function (comments) {
+            dfd.resolve({
+                commits: commit,
+                comments: comments,
+                path: path
+            });
+        }, function (error) {
+            dfd.reject(error.status);
+        });
+        return dfd;
+    }
+
+    function combineDataForFile(path, commits) {
+        var dfd = new $.Deferred(),
+            deferred_comments = commits.map(function (commit) {
+                return retrieveCommentsForCommit(commit, path);
+            });
+        $.when.apply($, deferred_comments).done(function () {
+            var data = Array.prototype.slice.call(arguments, 0),
+                root;
+            if (data && data.length) {
+                root = {
+                    path: path,
+                    commits: [],
+                    comments: []
+                };
+                data = data.reduce(function (acc, elem) {
+                    acc.commits = acc.commits.concat(elem.commits);
+                    acc.comments = acc.comments.concat(elem.comments);
+                    return acc;
+                }, root);
+            }
+            dfd.resolve(data);
+        });
+        return dfd;
+    }
+
+    function getDataForPathWithDeferred(path) {
+        var dfd = new $.Deferred();
+        $.getJSON(CONFIG.COMMIT_API_ENDPOINT, {
+            path: path
+        }).then(function (commits) {
+            combineDataForFile(path, commits).done(function (dataForPath) {
+                dfd.resolve(dataForPath);
+            });
+        }, function (error) {
+            dfd.reject(error.status);
+        });
+        return dfd;
+    }
+
+    function retrieveDataForPermalink(url) {
+        var path = extrapolatePathFromPermalink(url),
+            cache;
+        if (CONFIG.LOCAL_STORAGE_SUPPORTED) {
+            cache = maybeGetCachedVersion(url);
+            if (cache) {
+                var dfd = new $.Deferred();
+                dfd.resolve(cache);
+                return dfd;
+            }
+            return getDataForPathWithDeferred(path);
+        }
+        return getDataForPathWithDeferred(path);
+    }
+
+    /*
+     * HTML generator
+     */
+    function generateHtmlForComments(comment) {
+        var now = new Date().getTime(),
+            template_clone = $('#talaria-comment-placeholder').clone(),
+            header = template_clone.find('div.talaria-comment-header');
+        template_clone.find('span.talaria-img-placeholder').replaceWith(
+            '<img class="talaria-comment-author-avatar" height="48" width="48" src="' + comment.user.avatar_url + '" />');
+        header.find('b').text(comment.user.login);
+        header.find('a.talaria-author-nick').attr('href', comment.user.html_url);
+        header.find('a.talaria-commit-sha').attr('href', comment.html_url).html(
+            '<code>' + shortenCommitId(comment.commit_id) + '</code>');
+        header.find('span.talaria-header-right').text(timeDifference(now, new Date(comment.updated_at)));
+        template_clone.find('div.talaria-comment-body').html(comment.body_html);
+        template_clone.attr('id', comment.id).show();
+        return template_clone;
+    }
+
+    /*
+     * HTML manipulator
+     */
+    function updateCommentMeta(permalink_element, comment_data) {
+        var wrapper = permalink_element.parents('article').find('div.talaria-wrapper'),
+            latest_commit,
+            latest_commit_url,
+            c,
+            text;
+        if (comment_data.commits.length) {
+            latest_commit = comment_data.commits.sort(function (a, b) {
+                return new Date(a.commit.author.date) < new Date(b.commit.author.date);
+            })[0];
+        } else {
+            latest_commit = comment_data.commits;
+        }
+        latest_commit_url = CONFIG.REPO_COMMIT_URL_ROOT + latest_commit.sha + '#all_commit_comments';
+        wrapper.find('a.talaria-last-commit-href').attr('href', latest_commit_url);
+        if (comment_data.comments.length > 0) {
+            // check if currently displaying paginated content
+            if (location.pathname === "/" || CONFIG.PAGINATION_SCHEME.test(location.pathname)) {
+                c = comment_data.comments.length;
+                text = c + ' comment' + (c !== 1 ? 's' : '');
+                wrapper.find('a.talaria-expand-comments').attr('href', latest_commit_url).click(function (e) {
+                    e.preventDefault();
+                    wrapper.find('div.talaria-comment-list-wrapper').fadeIn();
+                    $(this).hide();
+                }).text(text);
+            } else {
+                wrapper.find('div.talaria-comment-count').hide();
+                wrapper.find('div.talaria-comment-list-wrapper').fadeIn();
+            }
+        } else {
+            wrapper.find('a.talaria-expand-comments').attr('href', latest_commit_url).text('Be the first to comment');
+        }
+        wrapper.find('a.talaria-add-comment-button').attr('href', latest_commit_url).click(function () {
+            if (CONFIG.LOCAL_STORAGE_SUPPORTED) {
+                sessionStorage.removeItem(permalink_element.get(0).href);
+            }
+        });
+    }
+
+    /*
+     * Initialization function
+     */
+    var initialize = function (config) {
+        CONFIG = $.extend({}, DEFAULTS, config);
+        CONFIG.COMMIT_API_ENDPOINT = 'https://api.github.com/repos/' + CONFIG.GITHUB_USERNAME + '/' + CONFIG.REPOSITORY_NAME + '/commits';
+        CONFIG.REPO_COMMIT_URL_ROOT = 'https://github.com/' + CONFIG.GITHUB_USERNAME + '/' + CONFIG.REPOSITORY_NAME + '/commit/';
+
+        $(document).ready(function () {
+            if (localStorageSupported) {
+                CONFIG.LOCAL_STORAGE_SUPPORTED = true;
+            }
+
+            $.ajaxSetup({
+                accepts: {
+                    json: 'application/vnd.github.v3.html+json'
+                }
+            });
+
+            $(CONFIG.PERMALINK_IDENTIFIER).map(function () {
+                var permalink = this;
+                $.when(retrieveDataForPermalink(permalink.href)).then(function (data) {
+                    if ($.isEmptyObject(data)) {
+                        var parent = $(permalink).parents('article');
+                        parent.find('div.talaria-load-error').show();
+                        parent.find('div.talaria-comment-count').hide();
+                    } else {
+                        var commentHtml = data.comments.sort(byAscendingDate).map(generateHtmlForComments);
+                        updateCommentMeta($(permalink), data);
+                        $(permalink).parents('article').find('div.talaria-comment-list').prepend(commentHtml);
+                        if (CONFIG.LOCAL_STORAGE_SUPPORTED) {
+                            sessionStorage.setItem(permalink.href, JSON.stringify({
+                                timestamp: new Date().getTime(),
+                                comment_data: data
+                            }));
+                        }
+                    }
+                }, function (status) {
+                    var parent = $(permalink).parents('article');
+                    parent.find('div.talaria-load-error').text(
+                        'You have exceeded the github API request limit. Could not retrieve the comments.').show();
+                    parent.find('div.talaria-comment-count').hide();
+                });
+            });
+        });
+    };
+
+    return {
+        init: initialize
+    };
+})($);
