@@ -21,8 +21,8 @@ gulp.task('sass', function() {
 
 gulp.task('compress', function() {
     gulp.src('./src/talaria.js')
-        .pipe(uglify({outSourceMap: true}))
         .pipe(rename('talaria.min.js'))
+        .pipe(uglify({outSourceMap: true}))
         .pipe(gulp.dest('./dist'));
 });
 
