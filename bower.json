@@ -1,7 +1,7 @@
 {
     "name": "talaria",
     "main": "talaria.js",
-    "version": "0.2.3",
+    "version": "0.2.4",
     "homepage": "https://github.com/m2w/talaria",
     "authors": [
         "Moritz <moritz@tibidat.com>"
