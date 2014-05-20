@@ -34,11 +34,11 @@ What does that mean? Here is an example layout that would satisfy _talaria_'s ne
 
 ## Getting started for real
 
-_talaria_ is composed of four components: 
+_talaria_ is composed of four components:
 
 - `talaria.js` which contains the logic to interact with the [github API](http://developer.github.com/v3/)
 - `talaria.css` (or `talaria.scss` for [SASS](http://sass-lang.com/) users) which provide a basic github-esque styling for the comments
-- `talaria-wrapper.html` and `talaria-comment.html`, template fragements for the comment section and individual comments respectively 
+- `talaria-wrapper.html` and `talaria-comment.html`, template fragements for the comment section and individual comments respectively
 
 Assuming you have installed _talaria_ with bower and are using jekyll, you should copy `bower_components/talaria/src/talaria*.html` to your `_includes` directory. Next you need to customize _talaria_ so that it knows where to find your content sources (such as your blog posts).
 
@@ -48,7 +48,7 @@ By default _talaria_ comments are skinned to almost mirror their counterparts on
 
 ## Setting up
 
-This step requires that you modify your site's (base) template. 
+This step requires that you modify your site's (base) template.
 
 1. Add `{% include talaria-wrapper.html %}` inside your content's `<article>`
 2. Add `{% include talaria-comment.html %} anywhere in your site's `<body>` - fear not, this is `display:none`
@@ -68,6 +68,16 @@ If required you have a couple of further customization options, include these as
 - `PAGINATION_SCHEME` (default `/\/page\d+\//`) _talaria_ uses this to check whether it should expand comments by default or not
 
 You're now done, test the setup to ensure everything is working fine and report any bugs :)
+
+## 'ping'
+
+_talaria_ comes with a really simple way of tracking visits using github's built-in [traffic](https://help.github.com/articles/using-graphs#traffic). It requires that you have a very minimal endpoint for your site, such as an empty `ping.txt`. For example:
+
+```js
+talaria.ping('/ping.txt');
+```
+
+Please note that this is a very dumb form of tracking. It works based on the `Referer` header, which jQuery sets for you. As such you will be able to differentiate requests coming from `/` and `/my-awesome-post` on the github traffic dashboard.
 
 ## FYI
 
