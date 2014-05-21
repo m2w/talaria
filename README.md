@@ -74,10 +74,10 @@ You're now done, test the setup to ensure everything is working fine and report 
 _talaria_ comes with a really simple way of tracking visits using github's built-in [traffic](https://help.github.com/articles/using-graphs#traffic). It requires that you have a very minimal endpoint for your site, such as an empty `ping.txt`. For example:
 
 ```js
-talaria.ping('/ping.txt');
+talaria.ping('/the/path/to/the/raw/ping.txt');
 ```
 
-Please note that this is a very dumb form of tracking. It works based on the `Referer` header, which jQuery sets for you. As such you will be able to differentiate requests coming from `/` and `/my-awesome-post` on the github traffic dashboard.
+This obviously doesn't work for custom domains due to CORS, support with plain github pages NOT tested.
 
 ## FYI
 
