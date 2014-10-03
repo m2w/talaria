@@ -4,6 +4,19 @@ locate content and provide a way for others to comment. Check out
 talaria [in action](http://blog.tibidat.com).
 
 
+# ToC
+
+* [Installation](#installation)
+* [Introduction](#introduction)
+* [Getting started](#getting-started)
+* [Customizing and setting up talaria](#customizing-and-setting-up-talaria)
+  * [Customizing the Look'n'Feel](#optional-customizing-the-looknfeel)
+* [Basic Stats](#ping)
+* [Best Practices](#best-practices)
+* [Regarding API rate-limiting](#fyi)
+* [Trivia](#trivia)
+
+
 ## Installation
 
 To install _talaria_ you have the choice between
@@ -18,7 +31,7 @@ _talaria_ depends on [jQuery](http://jquery.com/).
 
 Note: _talaria_ isn't yet listed on the bower index.
 
-## Getting started
+## Introduction
 
 _talaria_ makes some assumptions about how your DOM is structured. It
 assumes that:
@@ -43,7 +56,7 @@ _talaria_'s needs.
 </body>
 ```
 
-## Getting started for real
+## Getting started
 
 _talaria_ is composed of four components:
 
@@ -56,15 +69,7 @@ Assuming you have installed _talaria_ with bower and are using jekyll,
 we need to customize _talaria_ so that it knows where to find your
 content sources (such as your blog posts).
 
-### (optional) Customizing the look'n'feel
-
-By default _talaria_ comments are skinned to almost mirror their
-counterparts on github. However, not all parts of _talaria_ are
-styled. Styling for elements such as `<a>` and `<code>` is (currently)
-not provided. Checkout `talaria.css` or `talaria.sass` and feel free
-to customize these to suit your tastes.
-
-## Setting up
+## Customizing and setting up talaria
 
 This step requires that you modify your site's (base) template.
 
@@ -96,6 +101,27 @@ include these as required in your `CONFIG` object:
 
 You're now done, test the setup to ensure everything is working fine
 and report any bugs :)
+
+### (optional) Customizing the look'n'feel
+
+By default _talaria_ comments are skinned to almost mirror their
+counterparts on github. However, not all parts of _talaria_ are
+styled. Styling for elements such as `<a>` and `<code>` is (currently)
+not provided. Checkout `talaria.css` or `talaria.sass` and feel free
+to customize this to suit your tastes.
+
+## Best practices
+
+- Avoid multi-file changesets that contain commentable
+content. e.g. if you update 3 blog posts at once (say you change the
+spelling for a tag), commit each change file seperately. This ensures
+there is no comment overlap between posts. It also guarantees that the
+user will only see the post he planned to comment on while on github.
+- Avoid commiting non-commentable content along with commentable
+  content. e.g. if you regenerate your tag subpages after creating a
+  new blog post.
+
+*TLDR*: commits for commentable content should never include anything beside the content itself.
 
 ## 'ping'
 
