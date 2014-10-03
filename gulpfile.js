@@ -11,10 +11,10 @@ gulp.task('watch', function() {
 })
 
 gulp.task('sass', function() {
-    gulp.src('./src/*.scss')
+    gulp.src('./src/*.sass')
         .pipe(sass({compass: true}))
         .pipe(gulp.dest('./src'));
-    gulp.src('./src/*.scss')
+    gulp.src('./src/*.sass')
         .pipe(sass({compass: true, style: 'compressed'}))
         .pipe(gulp.dest('./dist'));
 });
