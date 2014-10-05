@@ -294,12 +294,7 @@ var talaria = (function ($) {
         });
     };
 
-    var ping = function (ping_endpoint) {
-        $.get(ping_endpoint);
-    };
-
     return {
-        init: initialize,
-        ping: ping
+        init: initialize
     };
 })($);
