@@ -11,7 +11,6 @@ talaria [in action](http://blog.tibidat.com).
 * [Getting started](#getting-started)
 * [Customizing and setting up talaria](#customizing-and-setting-up-talaria)
   * [Customizing the Look'n'Feel](#optional-customizing-the-looknfeel)
-* [Basic Stats](#ping)
 * [Best Practices](#best-practices)
 * [Regarding API rate-limiting](#fyi)
 * [Trivia](#trivia)
@@ -122,21 +121,6 @@ user will only see the post he planned to comment on while on github.
   new blog post.
 
 *TLDR*: commits for commentable content should never include anything beside the content itself.
-
-## 'ping'
-
-_talaria_ comes with a really simple way of tracking visits using
-github's built-in
-[traffic](https://help.github.com/articles/using-graphs#traffic). It
-requires that you have a very minimal endpoint for your site, such as
-an empty `ping.txt`. For example:
-
-```js
-talaria.ping('/the/path/to/the/raw/ping.txt');
-```
-
-This obviously doesn't work for custom domains due to CORS, support
-with plain github pages NOT tested.
 
 ## FYI
 
