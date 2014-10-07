@@ -4,63 +4,82 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
     <title>Talaria by m2w</title>
+
     <link rel="stylesheet" href="stylesheets/styles.css">
     <link rel="stylesheet" href="stylesheets/pygment_trac.css">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
-    <script src="javascripts/respond.js"></script>
-    <!--[if lt IE 9]>
-      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
-    <![endif]-->
-    <!--[if lt IE 8]>
-    <link rel="stylesheet" href="stylesheets/ie.css">
-    <![endif]-->
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
   </head>
   <body>
-      <div id="header">
-        <nav>
-          <li class="fork"><a href="https://github.com/m2w/talaria">View On GitHub</a></li>
-          <li class="downloads"><a href="https://github.com/m2w/talaria/zipball/master">ZIP</a></li>
-          <li class="downloads"><a href="https://github.com/m2w/talaria/tarball/master">TAR</a></li>
-          <li class="title">DOWNLOADS</li>
-        </nav>
-      </div><!-- end header -->
-
     <div class="wrapper">
+      <header>
+        <h1>Talaria</h1>
+        <p>A commenting system for static content, hosted on github</p>
 
+        <p class="view"><a href="https://github.com/m2w/talaria">View the Project on GitHub <small>m2w/talaria</small></a></p>
+
+
+        <ul>
+          <li><a href="https://github.com/m2w/talaria/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/m2w/talaria/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/m2w/talaria">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
       <section>
-        <div id="title">
-          <h1>Talaria</h1>
-          <p>A commenting system for static content, hosted on github</p>
-          <hr>
-          <span class="credits left">Project maintained by <a href="https://github.com/m2w">m2w</a></span>
-          <span class="credits right">Hosted on GitHub Pages &mdash; Theme by <a href="https://twitter.com/michigangraham">mattgraham</a></span>
-        </div>
+        <p><em>talaria</em> is a commenting system for static sites, like
+<a href="http://pages.github.com/">github pages</a>. It uses github commits to
+locate content and provide a way for others to comment. Check out
+talaria <a href="http://blog.tibidat.com">in action</a>.</p>
 
-        <p><em>talaria</em> is a commenting system for static sites, like <a href="http://pages.github.com/">github pages</a>. It uses github commits to locate content and provide a way for others to comment. Check out talaria <a href="http://blog.tibidat.com">in action</a>.</p>
+<h1>
+<a name="toc" class="anchor" href="#toc"><span class="octicon octicon-link"></span></a>ToC</h1>
 
-<h2>
+<ul>
+<li><a href="#installation">Installation</a></li>
+<li><a href="#introduction">Introduction</a></li>
+<li><a href="#getting-started">Getting started</a></li>
+<li>
+<a href="#customizing-and-setting-up-talaria">Customizing and setting up talaria</a>
+
+<ul>
+<li><a href="#optional-customizing-the-looknfeel">Customizing the Look'n'Feel</a></li>
+</ul>
+</li>
+<li><a href="#best-practices">Best Practices</a></li>
+<li><a href="#fyi">Regarding API rate-limiting</a></li>
+<li><a href="#trivia">Trivia</a></li>
+</ul><h2>
 <a name="installation" class="anchor" href="#installation"><span class="octicon octicon-link"></span></a>Installation</h2>
 
-<p>To install <em>talaria</em> you have the choice between <a href="http://bower.io/">bower</a>:</p>
+<p>To install <em>talaria</em> you have the choice between
+<a href="http://bower.io/">bower</a>:</p>
 
 <p><code>bower install m2w/talaria</code></p>
 
-<p>and a plain <a href="https://github.com/m2w/talaria/releases/tag/0.2.0">download</a>. Note that <em>talaria</em> depends on <a href="http://jquery.com/">jQuery</a>.</p>
+<p>and a plain
+<a href="https://github.com/m2w/talaria/releases/tag/0.3.1">download</a>.</p>
 
-<p>Note: <em>talaria</em> isn't yet listed on the bower repository.</p>
+<p><em>talaria</em> depends on <a href="http://jquery.com/">jQuery</a>.</p>
+
+<p>Note: <em>talaria</em> isn't yet listed on the bower index.</p>
 
 <h2>
-<a name="getting-started" class="anchor" href="#getting-started"><span class="octicon octicon-link"></span></a>Getting started</h2>
+<a name="introduction" class="anchor" href="#introduction"><span class="octicon octicon-link"></span></a>Introduction</h2>
 
-<p><em>talaria</em> makes some assumptions about how your DOM is structured. It assumes that:</p>
+<p><em>talaria</em> makes some assumptions about how your DOM is structured. It
+assumes that:</p>
 
 <ul>
-<li>every commentable content source (for example a blog post) is wrapped in an <code>&lt;article&gt;</code>
+<li>every commentable content source (for example a blog post) is
+wrapped in an <code>&lt;article&gt;</code>
 </li>
-<li>these <code>&lt;article&gt;</code> contain one distinct element (a permalink) that points to an URL that can be used to extrapolate the actual file name of the content.</li>
-</ul><p>What does that mean? Here is an example layout that would satisfy <em>talaria</em>'s needs.</p>
+<li>these <code>&lt;article&gt;</code> contain one distinct element (a permalink) that
+points to an URL that can be used to extrapolate the actual file
+name of the content.</li>
+</ul><p>What does that mean? Here is an example layout that would satisfy
+<em>talaria</em>'s needs.</p>
 
 <div class="highlight highlight-html"><pre><span class="nt">&lt;body&gt;</span>
 ...
@@ -73,69 +92,116 @@
 </pre></div>
 
 <h2>
-<a name="getting-started-for-real" class="anchor" href="#getting-started-for-real"><span class="octicon octicon-link"></span></a>Getting started for real</h2>
+<a name="getting-started" class="anchor" href="#getting-started"><span class="octicon octicon-link"></span></a>Getting started</h2>
 
-<p><em>talaria</em> is composed of four components: </p>
+<p><em>talaria</em> is composed of four components:</p>
 
 <ul>
 <li>
-<code>talaria.js</code> which contains the logic to interact with the <a href="http://developer.github.com/v3/">github API</a>
+<code>talaria.js</code> which contains the logic to interact with the
+<a href="http://developer.github.com/v3/">github API</a>
 </li>
 <li>
-<code>talaria.css</code> (or <code>talaria.scss</code> for <a href="http://sass-lang.com/">SASS</a> users) which provide a basic github-esque styling for the comments</li>
+<code>talaria.css</code> (or <code>talaria.sass</code> for <a href="http://sass-lang.com/">SASS</a>
+users) which provide a basic github-esque styling for the comments</li>
+</ul><p>Assuming you have installed <em>talaria</em> with bower and are using jekyll,
+we need to customize <em>talaria</em> so that it knows where to find your
+content sources (such as your blog posts).</p>
+
+<h2>
+<a name="customizing-and-setting-up-talaria" class="anchor" href="#customizing-and-setting-up-talaria"><span class="octicon octicon-link"></span></a>Customizing and setting up talaria</h2>
+
+<p>This step requires that you modify your site's (base) template.</p>
+
+<ol>
+<li>Add <code>&lt;link href="/bower_components/talaria/dist/talaria.css"
+rel="stylesheet" type="text/css"&gt;</code> (or add an <code>@import</code> statement
+for the SASS in your main sass file)</li>
+<li>Add <code>&lt;script type="text/javascript"
+src="/bower_components/talaria/dist/talaria.js"&gt;&lt;/script&gt;</code> (after
+jQuery!)</li>
 <li>
-<code>talaria-wrapper.html</code> and <code>talaria-comment.html</code>, template fragements for the comment section and individual comments respectively </li>
-</ul><p>Assuming you have installed <em>talaria</em> with bower and are using jekyll, you should copy <code>bower_components/talaria/src/talaria*.html</code> to your <code>_includes</code> directory. Next you need to customize <em>talaria</em> so that it knows where to find your content sources (such as your blog posts).</p>
+<em>After</em> including <code>talaria.js</code> call <code>talaria.init(CONFIG)</code> at some
+point, where <code>CONFIG</code> is an object that <em>must</em> contain appropriate
+values for <code>REPOSITORY_NAME</code> and <code>GITHUB_USERNAME</code>. For example:</li>
+</ol><div class="highlight highlight-js"><pre><span class="nx">talaria</span><span class="p">.</span><span class="nx">init</span><span class="p">({</span><span class="nx">REPOSITORY_NAME</span><span class="o">:</span> <span class="s1">'m2w.github.com'</span><span class="p">,</span> <span class="nx">GITHUB_USERNAME</span><span class="o">:</span> <span class="s1">'m2w'</span><span class="p">});</span>
+</pre></div>
+
+<p>If required you have a couple of further customization options,
+include these as required in your <code>CONFIG</code> object:</p>
+
+<ul>
+<li>
+<code>COMMENTABLE_CONTENT_PATH_PREFIX</code> (default <code>_posts/</code>) relative
+prefix to your content source files</li>
+<li>
+<code>CONTENT_SUFFIX</code> (default <code>.md</code>) this is used by <em>talaria</em> during
+the extrapolation of the path to individual content sources</li>
+<li>
+<code>PERMALINK_IDENTIFIER</code> (default <code>a.permalink</code>) this should be a
+valid jQuery selector that will be unique for each content source</li>
+<li>
+<code>PAGINATION_SCHEME</code> (default <code>/\/page\d+\//</code>) <em>talaria</em> uses this to
+check whether it should expand comments by default or not</li>
+</ul><p>You're now done, test the setup to ensure everything is working fine
+and report any bugs :)</p>
 
 <h3>
 <a name="optional-customizing-the-looknfeel" class="anchor" href="#optional-customizing-the-looknfeel"><span class="octicon octicon-link"></span></a>(optional) Customizing the look'n'feel</h3>
 
-<p>By default <em>talaria</em> comments are skinned to almost mirror their counterparts on github. However, not all parts of <em>talaria</em> are styled. Styling for elements such as <code>&lt;a&gt;</code> and <code>&lt;code&gt;</code> is (currently) not provided. Checkout <code>talaria.css</code> or <code>talaria.scss</code> and feel free to customize this to suit your tastes.</p>
+<p>By default <em>talaria</em> comments are skinned to almost mirror their
+counterparts on github. However, not all parts of <em>talaria</em> are
+styled. Styling for elements such as <code>&lt;a&gt;</code> and <code>&lt;code&gt;</code> is (currently)
+not provided. Checkout <code>talaria.css</code> or <code>talaria.sass</code> and feel free
+to customize this to suit your tastes.</p>
 
 <h2>
-<a name="setting-up" class="anchor" href="#setting-up"><span class="octicon octicon-link"></span></a>Setting up</h2>
-
-<p>This step requires that you modify your site's (base) template. </p>
-
-<ol>
-<li>Add <code>{% include talaria-wrapper.html %}</code> inside your content's <code>&lt;article&gt;</code>
-</li>
-<li>Add <code>{% include talaria-comment.html %} anywhere in your site's</code><code>- fear not, this is</code>display:none`</li>
-<li>Add <code>&lt;link href="/bower_components/talaria/dist/talaria.css" rel="stylesheet" type="text/css"&gt;</code> (or add an <code>@import</code> statement for the SASS in your main sass file)</li>
-<li>Add <code>&lt;script type="text/javascript" src="/bower_components/talaria/dist/talaria.js"&gt;&lt;/script&gt;</code> (after jQuery!)</li>
-<li>
-<em>After</em> including <code>talaria.js</code> call <code>talaria.init(CONFIG)</code> at some point, where <code>CONFIG</code> is an object that <em>must</em> contain appropriate values for <code>REPOSITORY_NAME</code> and <code>GITHUB_USERNAME</code>. For example:</li>
-</ol><div class="highlight highlight-js"><pre><span class="nx">talaria</span><span class="p">.</span><span class="nx">init</span><span class="p">({</span><span class="nx">REPOSITORY_NAME</span><span class="o">:</span> <span class="s1">'m2w.github.com'</span><span class="p">,</span> <span class="nx">GITHUB_USERNAME</span><span class="o">:</span> <span class="s1">'m2w'</span><span class="p">});</span>
-</pre></div>
-
-<p>If required you have a couple of further customization options, include these as required in your <code>CONFIG</code> object:</p>
+<a name="best-practices" class="anchor" href="#best-practices"><span class="octicon octicon-link"></span></a>Best practices</h2>
 
 <ul>
-<li>
-<code>COMMENTABLE_CONTENT_PATH_PREFIX</code> (default <code>_posts/</code>) relative prefix to your content source files</li>
-<li>
-<code>CONTENT_SUFFIX</code> (default <code>.md</code>) this is used by <em>talaria</em> during the extrapolation of the path to individual content sources</li>
-<li>
-<code>PERMALINK_IDENTIFIER</code> (default <code>a.permalink</code>) this should be a valid jQuery selector that will be unique for each content source</li>
-<li>
-<code>PAGINATION_SCHEME</code> (default <code>/\/page\d+\//</code>) <em>talaria</em> uses this to check whether it should expand comments by default or not</li>
-</ul><p>You're now done, test the setup to ensure everything is working fine and report any bugs :)</p>
+<li>Avoid multi-file changesets that contain commentable
+content. e.g. if you update 3 blog posts at once (say you change the
+spelling for a tag), commit each change file seperately. This ensures
+there is no comment overlap between posts. It also guarantees that the
+user will only see the post he planned to comment on while on github.</li>
+<li>Avoid commiting non-commentable content along with commentable
+content. e.g. if you regenerate your tag subpages after creating a
+new blog post.</li>
+</ul><p><em>TLDR</em>: commits for commentable content should never include anything beside the content itself.</p>
 
 <h2>
 <a name="fyi" class="anchor" href="#fyi"><span class="octicon octicon-link"></span></a>FYI</h2>
 
-<p>The github API is currently restricted to <em>60 API calls per hour</em> for unauthenticated users. This means that your users can retrieve comments for at most 30 entries. This number is lower if you have multiple commits per 'content source file'; it costs 1 additional API request per additional commit (so if you have 3 commits for a the post <code>/2013/03/22/blog-relaunch</code>, <em>talaria</em> actually needs a total of 4 API calls to get all comments). <em>talaria</em> tries to use <code>sessionStorage</code> to reduce the total number of API calls, but users could potentially still run into <code>403</code> errors from throtteling, in which case <em>talaria</em> displays a simple error message.</p>
+<p>The github API is currently restricted to <em>60 API calls per hour</em> for
+unauthenticated users. This means that your users can retrieve
+comments for at most 30 entries. This number is lower if you have
+multiple commits per 'content source file'; it costs 1 additional API
+request per additional commit (so if you have 3 commits for a the post
+<code>/2013/03/22/blog-relaunch</code>, <em>talaria</em> actually needs a total of 4 API
+calls to get all comments). <em>talaria</em> tries to use <code>sessionStorage</code> to
+reduce the total number of API calls, but users could potentially
+still run into <code>403</code> errors from throtteling, in which case <em>talaria</em>
+displays a simple error message.</p>
 
-<p>Users clicking the "Add comment" buttons get redirected to github, where they can then login and comment. However, at this point I do not know of a way to get users back to your site after the redirect.</p>
+<p>Users clicking the "Add comment" buttons get redirected to github,
+where they can then login and comment. However, at this point I do not
+know of a way to get users back to your site after the redirect.</p>
+
+<p><em>talaria</em> appends the comments (that is they become the last child
+element) of your <code>&lt;article&gt;</code>s. This is currently not customizable.</p>
 
 <h2>
 <a name="trivia" class="anchor" href="#trivia"><span class="octicon octicon-link"></span></a>Trivia</h2>
 
-<p>talaria are the <a href="http://en.wikipedia.org/wiki/Talaria">winged sandals</a> worn by Hermes in Greek mythology.</p>
+<p>talaria are the <a href="http://en.wikipedia.org/wiki/Talaria">winged sandals</a>
+worn by Hermes in Greek mythology.</p>
       </section>
-
+      <footer>
+        <p>This project is maintained by <a href="https://github.com/m2w">m2w</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
     </div>
-    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+    <script src="javascripts/scale.fix.js"></script>
     
   </body>
 </html>
