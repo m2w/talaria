@@ -1,5 +1,5 @@
 /*global document,$,sessionStorage,location*/
-var talaria = (function ($) {
+var talaria = (function ($, async) {
     'use strict';
 
     /*
@@ -214,6 +214,32 @@ var talaria = (function ($) {
         return getDataForPathWithDeferred(path);
     }
 
+    function retrieveCommentsForGist(gist, callback) {
+        if (gist.comments > 0) {
+            $.getJSON('https://api.github.com/gists/' + gist.id + '/comments').
+                then(function (comments) {
+                    gist.comments = comments;
+                    callback(null, gist);
+                }, function (error) {
+                    gist.comments = [];
+                    callback(error, gist);
+                });
+        }
+        gist.comments = [];
+        callback(null, gist);
+    }
+
+    function retrieveGists() {
+        $.getJSON(CONFIG.GISTS_API_ENDPOINT).then(function (gists) {
+            async.mapLimit(gists, 5, retrieveCommentsForGist, function (err, results) {
+                if (err) {
+                    console.log('done: ' + err);
+                }
+                console.log('done: ' + results);
+        });
+        });
+    }
+
     /*
      * HTML manipulator
      */
@@ -252,6 +278,7 @@ var talaria = (function ($) {
      */
     var initialize = function (config) {
         CONFIG = $.extend({}, DEFAULTS, config);
+        CONFIG.GISTS_API_ENDPOINT = 'https://api.github.com/users/' + CONFIG.GITHUB_USERNAME + '/gists'
         CONFIG.COMMIT_API_ENDPOINT = 'https://api.github.com/repos/' + CONFIG.GITHUB_USERNAME + '/' + CONFIG.REPOSITORY_NAME + '/commits';
         CONFIG.REPO_COMMIT_URL_ROOT = 'https://github.com/' + CONFIG.GITHUB_USERNAME + '/' + CONFIG.REPOSITORY_NAME + '/commit/';
 
@@ -259,12 +286,13 @@ var talaria = (function ($) {
             if (localStorageSupported) {
                 CONFIG.LOCAL_STORAGE_SUPPORTED = true;
             }
-
-            $.ajaxSetup({
-                accepts: {
-                    json: 'application/vnd.github.v3.html+json'
-                }
-            });
+            if (CONFIG.USE_COMMITS) {
+                $.ajaxSetup({
+                    accepts: {
+                        json: 'application/vnd.github.v3.html+json'
+                    }
+                });
+            }
 
             $(CONFIG.PERMALINK_IDENTIFIER).map(function () {
                 var permalink = this;
@@ -297,4 +325,4 @@ var talaria = (function ($) {
     return {
         init: initialize
     };
-})($);
+})($, async);
