@@ -267,27 +267,29 @@ var talaria = (function ($, async) {
     }
 
     function retrieveGistComments(gist, callback) {
-        var matchingPermalink;
-        $.getJSON('https://api.github.com/gists/' + gist.id + '/comments').
-            then(function (comments) {
-                gist.comments = comments;
-                matchingPermalink = $(CONFIG.PERMALINK_IDENTIFIER + '[href="' + gist.permalink + '"]');
-                // cache the data
-                if (CONFIG.LOCAL_STORAGE_SUPPORTED) {
-                    sessionStorage.setItem(gist.permalink, JSON.stringify({
-                        timestamp: new Date().getTime(),
-                        commentData: gist
-                    }));
-                }
-                // add the comments
-                if (matchingPermalink !== []) {
-                    addGistComments(matchingPermalink, gist);
-                }
-                callback(null, gist);
-            }, function (error) {
-                gist.comments = [];
-                callback(error, gist);
-            });
+        var cache = maybeGetCachedVersion(gist.permalink),
+            matchingPermalink = $(CONFIG.PERMALINK_IDENTIFIER +
+                                  '[href="' + gist.permalink + '"]');
+        if (matchingPermalink !== [] && cache === undefined) {
+            $.getJSON('https://api.github.com/gists/' + gist.id + '/comments').
+                then(function (comments) {
+                    gist.comments = comments;
+
+                    cacheCommentData(gist.permalink, gist);
+
+                    // add the comments
+                    if (matchingPermalink !== []) {
+                        addGistComments(matchingPermalink, gist);
+                    }
+
+                    callback(null, gist);
+                }, function (error) {
+                    gist.comments = [];
+                    callback(error, gist);
+                });
+        } else {
+            callback(null, cache);
+        }
     }
 
     function retrieveCommentsForGistMappings(gistMappings) {
