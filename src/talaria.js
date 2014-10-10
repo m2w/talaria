@@ -1,4 +1,4 @@
-/*global document,$,sessionStorage,location*/
+/*global document,$,async,sessionStorage,location*/
 var talaria = (function ($, async) {
     'use strict';
 
@@ -12,28 +12,56 @@ var talaria = (function ($, async) {
             CACHE_TIMEOUT: 60 * 60 * 1000, // cache github data for 1 hour
             PAGINATION_SCHEME: /\/page\d+\//,
             LOCAL_STORAGE_SUPPORTED: false,
-            PERMALINK_IDENTIFIER: 'a.permalink'
+            PERMALINK_IDENTIFIER: 'a.permalink',
+            PERMALINK_STYLE: /[\.\w\-_:\/]+\/(\d+)\/(\d+)\/(\d+)\/([\w\-\.]+)$/
         };
 
     /*
      * Utilities
      */
-    function extrapolatePathFromPermalink(permalink_url) {
-        return permalink_url.replace(/[\.\w\-_:\/]+\/(\d+)\/(\d+)\/(\d+)\/([\w\-_\.]+)$/,
+    function setPermalinkRegex() {
+        switch (CONFIG.PERMALINK_STYLE) {
+        case 'pretty':
+            return /[\.\w\-_:\/]+\/(\d+)\/(\d+)\/(\d+)\/([\w\-\.]+)\/$/;
+        case 'date':
+            return /[\.\w\-_:\/]+\/(\d+)\/(\d+)\/(\d+)\/([\w\-\.]+)\.html$/;
+        case 'none':
+            if (CONFIG.USE_COMMITS) {
+                throw new Error('When using commit-based comments,' +
+                                ' talaria requires the use of' +
+                                ' permalinks that include the date' +
+                                ' of the post');
+            }
+            return /[\.\w\-_:\/]+\/([\w\-\.]+)\.html$/;
+        default: return CONFIG.PERMALINK_STYLE;
+        }
+    }
+
+    function extrapolatePathFromPermalink(permalinkUrl) {
+        return permalinkUrl.replace(CONFIG.PERMALINK_STYLE,
             CONFIG.COMMENTABLE_CONTENT_PATH_PREFIX + '$1-$2-$3-$4' + CONFIG.CONTENT_SUFFIX);
     }
 
-    function shortenCommitId(commit_id) {
-        return commit_id.substr(0, 7);
+    function shortenCommitId(commitId) {
+        return commitId.substr(0, 7);
     }
 
     function localStorageSupported() {
         try {
-            sessionStorage.setItem("dummy", "dummy");
-            sessionStorage.removeItem("dummy");
+            sessionStorage.setItem('dummy', 'dummy');
+            sessionStorage.removeItem('dummy');
             return true;
         } catch (e) {
             return false;
+        }
+    }
+
+    function cacheCommentData(key, data) {
+        if (CONFIG.LOCAL_STORAGE_SUPPORTED) {
+            sessionStorage.setItem(key, JSON.stringify({
+                timestamp: new Date().getTime(),
+                commentData: data
+            }));
         }
     }
 
@@ -81,8 +109,8 @@ var talaria = (function ($, async) {
         return 'about ' + t + ' year' + maybePluralize(t) + ' ago';
     }
 
-    function isStale(cached_comment_data) {
-        return (new Date().getTime() - cached_comment_data.timestamp) > CONFIG.CACHE_TIMEOUT;
+    function isStale(cachedCommentData) {
+        return (new Date().getTime() - cachedCommentData.timestamp) > CONFIG.CACHE_TIMEOUT;
     }
 
     function maybeGetCachedVersion(url) {
@@ -90,32 +118,38 @@ var talaria = (function ($, async) {
         if (cache) {
             cache = JSON.parse(cache);
             if (!isStale(cache)) {
-                return cache.comment_data;
+                return cache.commentData;
             }
         }
         return undefined;
     }
 
+    function ensureAsyncAvailable () {
+        if (CONFIG.USE_GISTS && async === {}){
+            throw new Error('talaria requires async.js for gist-based comments.');
+        }
+    }
+
     /*
-     * Templating
+     * Templates
      */
-    function wrap(commit_sha, commit_url, ccount, comments_hidden) {
-            return '<div id="talaria-wrap-' + commit_sha + '" class="talaria-wrapper">' +
+    function wrapperTemplate(id, url, ccount, commentsHidden) {
+            return '<div id="talaria-wrap-' + id + '" class="talaria-wrapper">' +
             '  <div class="talaria-load-error hide">' +
             '    Unable to retrieve comments for this post.' +
             '  </div>' +
-            '  <div class="talaria-comment-count' + (comments_hidden ? '' : ' hide') + '">' +
-            '    <a id="talaria-show-' + commit_sha + '" href="' + commit_url + '">' + (ccount === 0 ? 'Be the first to comment' : (ccount + ' comment' + (ccount === 1 ? '' : 's'))) + '</a>' +
+            '  <div class="talaria-comment-count' + (commentsHidden ? '' : ' hide') + '">' +
+            '    <a id="talaria-show-' + id + '" href="' + url + '">' + (ccount === 0 ? 'Be the first to comment' : (ccount + ' comment' + (ccount === 1 ? '' : 's'))) + '</a>' +
             '  </div>' +
-            '  <div class="talaria-comment-list-wrapper' + (comments_hidden ? ' hide' : '') + '">' +
+            '  <div class="talaria-comment-list-wrapper' + (commentsHidden ? ' hide' : '') + '">' +
             '    <div class="talaria-header">' +
-            '      <h3>Comments <small>via <a class="talaria-last-commit-href" href="' + commit_url + '">github</a></small></h3>' +
+            '      <h3>Comments <small>via <a class="talaria-last-commit-href" href="' + url + '">github</a></small></h3>' +
             '    </div>' +
             '    <div class="talaria-comment-list">' +
             '      <!-- comments are dynamically added here -->' +
             '    </div>' +
             '    <div class="talaria-align-right">' +
-            '      <a id="talaria-add-' + commit_sha + '" class="talaria-add-comment-button" href="' + commit_url + '">' +
+            '      <a id="talaria-add-' + id + '" class="talaria-add-comment-button" href="' + url + '">' +
             '        <button type="submit">Add a Comment</button>' +
             '      </a>' +
             '    </div>' +
@@ -123,8 +157,16 @@ var talaria = (function ($, async) {
             '</div>';
     }
 
-    function comment_tpl(comment) {
-        var now = new Date().getTime();
+    function commentTemplate(comment) {
+        var now = new Date().getTime(),
+            headerLeft;
+        if (comment.commit_id !== undefined) {
+            headerLeft = '<span class="talaria-header-left">&nbsp;commented on <a class="talaria-commit-sha" href="' + comment.html_url + '">' +
+                '<code>' + shortenCommitId(comment.commit_id) + '</code></a></span>';
+        } else {
+            headerLeft = '<span class="talaria-header-left">&nbsp;</span>';
+        }
+
         return '<div id="' + comment.id + '" class="talaria-comment-bubble">' +
             '  <a href="#">' +
             '    <img class="talaria-comment-author-avatar" height="48" width="48" src="' + comment.user.avatar_url + '" />' +
@@ -133,18 +175,17 @@ var talaria = (function ($, async) {
             '    <div class="talaria-comment-bubble-inner">' +
             '      <div class="talaria-comment-header">' +
             '        <a class="talaria-author-nick" href="' + comment.user.html_url + '"><b>' + comment.user.login + '</b></a>' +
-            '        <span class="talaria-header-left">&nbsp;commented on <a class="talaria-commit-sha" href="' + comment.html_url + '"><code>' + shortenCommitId(comment.commit_id) + '</code></a></span>' +
+            headerLeft +
             '        <span class="talaria-header-right">' + timeDifference(now, new Date(comment.updated_at)) + '</span>' +
             '      </div>' +
-            '      <div class="talaria-comment-body">' + comment.body_html + '</div>' +
+            '      <div class="talaria-comment-body">' + comment.body_html || comment.body + '</div>' +
             '    </div>' +
             '  </div>' +
             '</div>';
     }
 
-
     /*
-     * github API interaction
+     * github API interaction - Commit-based
      */
     function retrieveCommentsForCommit(commit, path) {
         var dfd = new $.Deferred();
@@ -162,10 +203,10 @@ var talaria = (function ($, async) {
 
     function combineDataForFile(path, commits) {
         var dfd = new $.Deferred(),
-            deferred_comments = commits.map(function (commit) {
+            deferredComments = commits.map(function (commit) {
                 return retrieveCommentsForCommit(commit, path);
             });
-        $.when.apply($, deferred_comments).done(function () {
+        $.when.apply($, deferredComments).done(function () {
             var data = Array.prototype.slice.call(arguments, 0),
                 root;
             if (data && data.length) {
@@ -214,63 +255,94 @@ var talaria = (function ($, async) {
         return getDataForPathWithDeferred(path);
     }
 
-    function retrieveCommentsForGist(gist, callback) {
-        if (gist.comments > 0) {
-            $.getJSON('https://api.github.com/gists/' + gist.id + '/comments').
-                then(function (comments) {
-                    gist.comments = comments;
-                    callback(null, gist);
-                }, function (error) {
-                    gist.comments = [];
-                    callback(error, gist);
-                });
-        }
-        gist.comments = [];
-        callback(null, gist);
+
+    /*
+     * github API interaction - Gist-based
+     */
+    function retrieveGistBasedComments() {
+        $.getJSON(CONFIG.GIST_MAPPINGS, function (gistMappings) {
+            retrieveCommentsForGistMappings(gistMappings);
+        }).fail(function (error) { // misconfiguration, either incorrect json or file not available
+            // TODO: error handling
+        });
     }
 
-    function retrieveGists() {
-        $.getJSON(CONFIG.GISTS_API_ENDPOINT).then(function (gists) {
-            async.mapLimit(gists, 5, retrieveCommentsForGist, function (err, results) {
-                if (err) {
-                    console.log('done: ' + err);
+    function retrieveGistComments(gist, callback) {
+        var matchingPermalink;
+        $.getJSON('https://api.github.com/gists/' + gist.id + '/comments').
+            then(function (comments) {
+                gist.comments = comments;
+                matchingPermalink = $(CONFIG.PERMALINK_IDENTIFIER + '[href="' + gist.permalink + '"]');
+                // cache the data
+                if (CONFIG.LOCAL_STORAGE_SUPPORTED) {
+                    sessionStorage.setItem(gist.permalink, JSON.stringify({
+                        timestamp: new Date().getTime(),
+                        commentData: gist
+                    }));
                 }
-                console.log('done: ' + results);
-        });
+                // add the comments
+                if (matchingPermalink !== []) {
+                    addGistComments(matchingPermalink, gist);
+                }
+                callback(null, gist);
+            }, function (error) {
+                gist.comments = [];
+                callback(error, gist);
+            });
+    }
+
+    function retrieveCommentsForGistMappings(gistMappings) {
+        async.mapLimit(gistMappings, 5, retrieveGistComments, function (err, results) {
+            if (err) { // rate-limit reached, invalid id, other?
+                // TODO: error handling
+                console.log('done: ' + err);
+            }
         });
     }
 
     /*
      * HTML manipulator
      */
-    function updateCommentMeta(permalink_element, comment_data) {
+    function addCommentWrapper(permalinkElement, commentData) {
         var wrapper,
-            latest_commit,
-            latest_commit_url;
-        if (comment_data.commits.length) {
-            latest_commit = comment_data.commits.sort(function (a, b) {
+            latestCommit,
+            latestCommitUrl;
+        if (commentData.commits.length) {
+            latestCommit = commentData.commits.sort(function (a, b) {
                 return new Date(a.commit.author.date) < new Date(b.commit.author.date);
             })[0];
         } else {
-            latest_commit = comment_data.commits;
+            latestCommit = commentData.commits;
         }
-        latest_commit_url = CONFIG.REPO_COMMIT_URL_ROOT + latest_commit.sha + '#all_commit_comments';
-        wrapper = wrap(latest_commit.sha,
-                          latest_commit_url,
-                          comment_data.comments.length,
-                          (location.pathname === "/" ||
-                           CONFIG.PAGINATION_SCHEME.test(location.pathname)));
-        permalink_element.parents('article').append(wrapper);
-        $('a#talaria-show-' + latest_commit.sha).click(function (e) {
+        latestCommitUrl = CONFIG.REPO_COMMIT_URL_ROOT + latestCommit.sha + '#all_commit_comments';
+        wrapper = wrapperTemplate(latestCommit.sha,
+                                  latestCommitUrl,
+                                  commentData.comments.length,
+                                  (location.pathname === '/' ||
+                                   CONFIG.PAGINATION_SCHEME.test(location.pathname)));
+        permalinkElement.parents('article').append(wrapper);
+        $('a#talaria-show-' + latestCommit.sha).click(function (e) {
             e.preventDefault();
-            $('div#talaria-wrap-' + latest_commit.sha + ' .talaria-comment-list-wrapper').fadeIn();
+            $('div#talaria-wrap-' + latestCommit.sha + ' .talaria-comment-list-wrapper').fadeIn();
             $(this).hide();
         });
-        $('a#talaria-add-' + latest_commit.sha).click(function () {
+        $('a#talaria-add-' + latestCommit.sha).click(function () {
             if (CONFIG.LOCAL_STORAGE_SUPPORTED) {
-                sessionStorage.removeItem(permalink_element.get(0).href);
+                sessionStorage.removeItem(permalinkElement.get(0).href);
             }
         });
+    }
+
+    function addGistComments(permalink, gist) {
+        var wrapper = wrapperTemplate(gist.id,
+                                      gist.url,
+                                      gist.comments.length,
+                                      (location.pathname === '/' ||
+                                       CONFIG.PAGINATION_SCHEME.test(location.pathname))),
+            commentHtml = gist.comments.map(commentTemplate);
+        permalink.parents('article').append(wrapper);
+        permalink.parents('article').find('div.talaria-comment-list').prepend(commentHtml);
+        // TODO: add click handlers!
     }
 
     /*
@@ -278,47 +350,48 @@ var talaria = (function ($, async) {
      */
     var initialize = function (config) {
         CONFIG = $.extend({}, DEFAULTS, config);
-        CONFIG.GISTS_API_ENDPOINT = 'https://api.github.com/users/' + CONFIG.GITHUB_USERNAME + '/gists'
+        CONFIG.GISTS_API_ENDPOINT = 'https://api.github.com/users/' + CONFIG.GITHUB_USERNAME + '/gists';
         CONFIG.COMMIT_API_ENDPOINT = 'https://api.github.com/repos/' + CONFIG.GITHUB_USERNAME + '/' + CONFIG.REPOSITORY_NAME + '/commits';
         CONFIG.REPO_COMMIT_URL_ROOT = 'https://github.com/' + CONFIG.GITHUB_USERNAME + '/' + CONFIG.REPOSITORY_NAME + '/commit/';
+        CONFIG.PERMALINK_STYLE = setPermalinkRegex();
+
+        ensureAsyncAvailable();
 
         $(document).ready(function () {
             if (localStorageSupported) {
                 CONFIG.LOCAL_STORAGE_SUPPORTED = true;
             }
-            if (CONFIG.USE_COMMITS) {
-                $.ajaxSetup({
-                    accepts: {
-                        json: 'application/vnd.github.v3.html+json'
-                    }
+
+            $.ajaxSetup({
+                accepts: {
+                    json: 'application/vnd.github.v3.html+json'
+                }
+            });
+
+            if (CONFIG.USE_GISTS) {
+                retrieveGistBasedComments();
+            } else {
+                $(CONFIG.PERMALINK_IDENTIFIER).map(function () {
+                    var permalink = this;
+                    $.when(retrieveDataForPermalink(permalink.href)).then(function (data) {
+                        if ($.isEmptyObject(data)) {
+                            var parent = $(permalink).parents('article');
+                            parent.find('div.talaria-load-error').show();
+                            parent.find('div.talaria-comment-count').hide();
+                        } else {
+                            var commentsHtml = data.comments.sort(byAscendingDate).map(commentTemplate);
+                            addCommentWrapper($(permalink), data);
+                            $(permalink).parents('article').find('div.talaria-comment-list').prepend(commentsHtml);
+                            cacheCommentData(permalink.href, data);
+                        }
+                    }, function (status) {
+                        var parent = $(permalink).parents('article');
+                        parent.find('div.talaria-load-error').text(
+                            'The github API rate-limit has been reached. Unable to load comments.').show();
+                        parent.find('div.talaria-comment-count').hide();
+                    });
                 });
             }
-
-            $(CONFIG.PERMALINK_IDENTIFIER).map(function () {
-                var permalink = this;
-                $.when(retrieveDataForPermalink(permalink.href)).then(function (data) {
-                    if ($.isEmptyObject(data)) {
-                        var parent = $(permalink).parents('article');
-                        parent.find('div.talaria-load-error').show();
-                        parent.find('div.talaria-comment-count').hide();
-                    } else {
-                        var commentHtml = data.comments.sort(byAscendingDate).map(comment_tpl);
-                        updateCommentMeta($(permalink), data);
-                        $(permalink).parents('article').find('div.talaria-comment-list').prepend(commentHtml);
-                        if (CONFIG.LOCAL_STORAGE_SUPPORTED) {
-                            sessionStorage.setItem(permalink.href, JSON.stringify({
-                                timestamp: new Date().getTime(),
-                                comment_data: data
-                            }));
-                        }
-                    }
-                }, function (status) {
-                    var parent = $(permalink).parents('article');
-                    parent.find('div.talaria-load-error').text(
-                        'The github API rate-limit has been reached. Unable to load comments.').show();
-                    parent.find('div.talaria-comment-count').hide();
-                });
-            });
         });
     };
 
