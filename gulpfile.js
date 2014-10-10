@@ -33,6 +33,16 @@ gulp.task('copy', function() {
 
 gulp.task('lint', function() {
     gulp.src('./src/*.js')
-        .pipe(jshint())
+        .pipe(jshint({'maxdepth': 2,
+                      'strict': true,
+                      'unused': 'strict',
+                      'undef': true,
+                      'quotmark': 'single',
+                      'latedef': 'nofunc',
+                      'immed': true,
+                      'eqeqeq': true,
+                      'curly': true,
+                      'camelcase': true,
+                      'bitwise': true}))
         .pipe(jshint.reporter('default'));
 });
