@@ -114,11 +114,14 @@ var talaria = (function ($, async) {
     }
 
     function maybeGetCachedVersion(url) {
-        var cache = sessionStorage.getItem(url);
-        if (cache) {
-            cache = JSON.parse(cache);
-            if (!isStale(cache)) {
-                return cache.commentData;
+        var cache;
+        if (CONFIG.LOCAL_STORAGE_SUPPORTED) {
+            cache = sessionStorage.getItem(url);
+            if (cache) {
+                cache = JSON.parse(cache);
+                if (!isStale(cache)) {
+                    return cache.commentData;
+                }
             }
         }
         return undefined;
@@ -242,15 +245,11 @@ var talaria = (function ($, async) {
 
     function retrieveDataForPermalink(url) {
         var path = extrapolatePathFromPermalink(url),
-            cache;
-        if (CONFIG.LOCAL_STORAGE_SUPPORTED) {
             cache = maybeGetCachedVersion(url);
-            if (cache) {
-                var dfd = new $.Deferred();
-                dfd.resolve(cache);
-                return dfd;
-            }
-            return getDataForPathWithDeferred(path);
+        if (cache) {
+            var dfd = new $.Deferred();
+            dfd.resolve(cache);
+            return dfd;
         }
         return getDataForPathWithDeferred(path);
     }
