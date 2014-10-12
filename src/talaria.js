@@ -148,7 +148,7 @@ var talaria = (function ($, async) {
             '    <div class="talaria-header">' +
             '      <h3>Comments <small>via <a class="talaria-last-commit-href" href="' + url + '">github</a></small></h3>' +
             '    </div>' +
-            '    <div class="talaria-comment-list">' +
+            '    <div class="talaria-comment-list" id="talaria-comment-list-' + id + '">' +
             '      <!-- comments are dynamically added here -->' +
             '    </div>' +
             '    <div class="talaria-align-right">' +
@@ -158,6 +158,10 @@ var talaria = (function ($, async) {
             '    </div>' +
             '  </div>' +
             '</div>';
+    }
+
+    function noCommentsYetTemplate(url) {
+
     }
 
     function commentTemplate(comment) {
@@ -259,41 +263,65 @@ var talaria = (function ($, async) {
      * github API interaction - Gist-based
      */
     function retrieveGistBasedComments() {
+        var mappings = [],
+            relevant = false,
+            gist;
+        // TODO: cache the mappings
         $.getJSON(CONFIG.GIST_MAPPINGS, function (gistMappings) {
-            retrieveCommentsForGistMappings(gistMappings);
+            // TODO: this can be optimized
+            for (var entry in gistMappings) {
+                if (gistMappings.hasOwnProperty(entry)) {
+                    gist = gistMappings[entry];
+                    var permalink = $(CONFIG.PERMALINK_IDENTIFIER +
+                                      '[href="' + gist.permalink + '"]');
+                    relevant = permalink.length > 0;
+                    if (relevant) {
+                        mappings.push({'gist':gistMappings[entry], 'linkobj': permalink});
+                    }
+                }
+            }
+            addGistComments(mappings);
         }).fail(function (error) { // misconfiguration, either incorrect json or file not available
             // TODO: error handling
         });
     }
 
-    function retrieveGistComments(gist, callback) {
-        var cache = maybeGetCachedVersion(gist.permalink),
-            matchingPermalink = $(CONFIG.PERMALINK_IDENTIFIER +
-                                  '[href="' + gist.permalink + '"]');
-        if (matchingPermalink !== [] && cache === undefined) {
+    function retrieveGistComments(mapping, callback) {
+        var gist = mapping.gist,
+            cache = maybeGetCachedVersion(gist.permalink),
+            dfd = new $.Deferred();
+
+        if (cache !== undefined) {
+            dfd.resolve(cache);
+        } else {
             $.getJSON('https://api.github.com/gists/' + gist.id + '/comments').
                 then(function (comments) {
                     gist.comments = comments;
-
                     cacheCommentData(gist.permalink, gist);
-
-                    // add the comments
-                    if (matchingPermalink !== []) {
-                        addGistComments(matchingPermalink, gist);
-                    }
-
-                    callback(null, gist);
-                }, function (error) {
-                    gist.comments = [];
-                    callback(error, gist);
-                });
-        } else {
-            callback(null, cache);
+                    dfd.resolve(gist);
+                    }, function (error) {
+                        gist.comments = [];
+                        dfd.reject(error, gist);
+                    });
         }
+        return dfd.promise();
     }
 
-    function retrieveCommentsForGistMappings(gistMappings) {
-        async.mapLimit(gistMappings, 5, retrieveGistComments, function (err, results) {
+    function asdf(mapping, callback) {
+        retrieveGistComments(mapping).
+            done(function (gist) {
+                displayCommentsForGist(mapping.linkobj, gist);
+                callback();
+            }).
+            fail(function (error, gist) {
+                showErrorForGist(mapping.linkobj, gist);
+                // we don't really need special error handling beyond this
+                callback();
+            });
+    }
+
+    function addGistComments(mappings) {
+        async.eachLimit(mappings, 5, asdf, function (err) {
             if (err) { // rate-limit reached, invalid id, other?
                 // TODO: error handling
                 console.log('done: ' + err);
@@ -304,6 +332,15 @@ var talaria = (function ($, async) {
     /*
      * HTML manipulator
      */
+
+    function showErrorForGist(permalinkElement, gist) {
+        $('#talaria-wrap-' + gist.id + ' div.talaria-load-error').text(
+            'The github API rate-limit has been reached. Unable to load comments.').show();
+        // TODO: fix the error message, could be 403 or 404
+        $('#talaria-wrap-' + gist.id + ' div.talaria-comment-count').hide();
+
+    }
+
     function addCommentWrapper(permalinkElement, commentData) {
         var wrapper,
             latestCommit,
@@ -322,28 +359,33 @@ var talaria = (function ($, async) {
                                   (location.pathname === '/' ||
                                    CONFIG.PAGINATION_SCHEME.test(location.pathname)));
         permalinkElement.parents('article').append(wrapper);
-        $('a#talaria-show-' + latestCommit.sha).click(function (e) {
+        addClickHandlers(latestCommit.sha, permalinkElement.get(0).href);
+    }
+
+    function addClickHandlers(id, url) {
+        $('a#talaria-show-' + id).click(function (e) {
             e.preventDefault();
-            $('div#talaria-wrap-' + latestCommit.sha + ' .talaria-comment-list-wrapper').fadeIn();
+            $('div#talaria-wrap-' + id + ' .talaria-comment-list-wrapper').fadeIn();
             $(this).hide();
         });
-        $('a#talaria-add-' + latestCommit.sha).click(function () {
+        $('a#talaria-add-' + id).click(function () {
             if (CONFIG.LOCAL_STORAGE_SUPPORTED) {
-                sessionStorage.removeItem(permalinkElement.get(0).href);
+                sessionStorage.removeItem(url);
             }
         });
     }
 
-    function addGistComments(permalink, gist) {
-        var wrapper = wrapperTemplate(gist.id,
-                                      gist.url,
+    function displayCommentsForGist(permalinkElement, gist) {
+        var gistUrl = CONFIG.GIST_URL_ROOT + gist.id,
+            wrapper = wrapperTemplate(gist.id,
+                                      gistUrl,
                                       gist.comments.length,
                                       (location.pathname === '/' ||
                                        CONFIG.PAGINATION_SCHEME.test(location.pathname))),
             commentHtml = gist.comments.map(commentTemplate);
-        permalink.parents('article').append(wrapper);
-        permalink.parents('article').find('div.talaria-comment-list').prepend(commentHtml);
-        // TODO: add click handlers!
+        permalinkElement.parents('article').append(wrapper);
+        $('#talaria-comment-list-' + gist.id).prepend(commentHtml);
+        addClickHandlers(gist.id, gist.permalink);
     }
 
     /*
@@ -354,6 +396,7 @@ var talaria = (function ($, async) {
         CONFIG.GISTS_API_ENDPOINT = 'https://api.github.com/users/' + CONFIG.GITHUB_USERNAME + '/gists';
         CONFIG.COMMIT_API_ENDPOINT = 'https://api.github.com/repos/' + CONFIG.GITHUB_USERNAME + '/' + CONFIG.REPOSITORY_NAME + '/commits';
         CONFIG.REPO_COMMIT_URL_ROOT = 'https://github.com/' + CONFIG.GITHUB_USERNAME + '/' + CONFIG.REPOSITORY_NAME + '/commit/';
+        CONFIG.GIST_URL_ROOT = 'https://gist.github.com/' + CONFIG.GITHUB_USERNAME + '/';
         CONFIG.PERMALINK_STYLE = setPermalinkRegex();
 
         ensureAsyncAvailable();
