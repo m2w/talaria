@@ -161,10 +161,6 @@ var talaria = (function ($, async) {
             '</div>';
     }
 
-    function noCommentsYetTemplate(url) {
-
-    }
-
     function commentTemplate(comment) {
         var now = new Date().getTime(),
             headerLeft;
@@ -287,7 +283,7 @@ var talaria = (function ($, async) {
         });
     }
 
-    function retrieveGistComments(mapping, callback) {
+    function retrieveGistComments(mapping) {
         var gist = mapping.gist,
             cache = maybeGetCachedVersion(gist.permalink),
             dfd = new $.Deferred();
@@ -308,7 +304,7 @@ var talaria = (function ($, async) {
         return dfd.promise();
     }
 
-    function asdf(mapping, callback) {
+    function handleGistMapping(mapping, callback) {
         retrieveGistComments(mapping).
             done(function (gist) {
                 displayCommentsForGist(mapping.linkobj, gist);
@@ -322,7 +318,7 @@ var talaria = (function ($, async) {
     }
 
     function addGistComments(mappings) {
-        async.eachLimit(mappings, 5, asdf, function (err) {
+        async.eachLimit(mappings, 5, handleGistMapping, function (err) {
             if (err) { // rate-limit reached, invalid id, other?
                 // TODO: error handling
                 console.log('done: ' + err);
