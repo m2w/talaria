@@ -137,7 +137,8 @@ var talaria = (function ($, async) {
      * Templates
      */
     function wrapperTemplate(id, url, ccount, commentsHidden) {
-            return '<div id="talaria-wrap-' + id + '" class="talaria-wrapper">' +
+        commentsHidden = ccount === 0 || commentsHidden;
+        return '<div id="talaria-wrap-' + id + '" class="talaria-wrapper">' +
             '  <div class="talaria-load-error hide">' +
             '    Unable to retrieve comments for this post.' +
             '  </div>' +
@@ -171,7 +172,7 @@ var talaria = (function ($, async) {
             headerLeft = '<span class="talaria-header-left">&nbsp;commented on <a class="talaria-commit-sha" href="' + comment.html_url + '">' +
                 '<code>' + shortenCommitId(comment.commit_id) + '</code></a></span>';
         } else {
-            headerLeft = '<span class="talaria-header-left">&nbsp;</span>';
+            headerLeft = '<span class="talaria-header-left">&nbsp;wrote</span>';
         }
 
         return '<div id="' + comment.id + '" class="talaria-comment-bubble">' +
