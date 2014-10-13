@@ -29,9 +29,10 @@
       </header>
       <section>
         <p><em>talaria</em> is a commenting system for static sites, like
-<a href="http://pages.github.com/">github pages</a>. It uses github commits to
-locate content and provide a way for others to comment. Check out
-talaria <a href="http://blog.tibidat.com">in action</a>.</p>
+<a href="http://pages.github.com/">github pages</a>. It provides the option to
+provide comments on github hosted content either through github commit
+comments or through gist comments. You can see talaria in action
+<a href="http://blog.tibidat.com">here</a>.</p>
 
 <h1>
 <a name="toc" class="anchor" href="#toc"><span class="octicon octicon-link"></span></a>ToC</h1>
@@ -50,7 +51,9 @@ talaria <a href="http://blog.tibidat.com">in action</a>.</p>
 <li><a href="#best-practices">Best Practices</a></li>
 <li><a href="#fyi">Regarding API rate-limiting</a></li>
 <li><a href="#trivia">Trivia</a></li>
-</ul><h2>
+</ul>
+
+<h2>
 <a name="installation" class="anchor" href="#installation"><span class="octicon octicon-link"></span></a>Installation</h2>
 
 <p>To install <em>talaria</em> you have the choice between
@@ -61,9 +64,10 @@ talaria <a href="http://blog.tibidat.com">in action</a>.</p>
 <p>and a plain
 <a href="https://github.com/m2w/talaria/releases/tag/0.3.1">download</a>.</p>
 
-<p><em>talaria</em> depends on <a href="http://jquery.com/">jQuery</a>.</p>
+<p><em>talaria</em> depends on <a href="http://jquery.com/">jQuery</a> and
+<a href="https://github.com/caolan/async">async.js</a>.</p>
 
-<p>Note: <em>talaria</em> isn't yet listed on the bower index.</p>
+<p>Note: <em>talaria</em> is currently not listed on the bower index.</p>
 
 <h2>
 <a name="introduction" class="anchor" href="#introduction"><span class="octicon octicon-link"></span></a>Introduction</h2>
@@ -78,7 +82,9 @@ wrapped in an <code>&lt;article&gt;</code>
 <li>these <code>&lt;article&gt;</code> contain one distinct element (a permalink) that
 points to an URL that can be used to extrapolate the actual file
 name of the content.</li>
-</ul><p>What does that mean? Here is an example layout that would satisfy
+</ul>
+
+<p>What does that mean? Here is an example layout that would satisfy
 <em>talaria</em>'s needs.</p>
 
 <div class="highlight highlight-html"><pre><span class="nt">&lt;body&gt;</span>
@@ -94,7 +100,7 @@ name of the content.</li>
 <h2>
 <a name="getting-started" class="anchor" href="#getting-started"><span class="octicon octicon-link"></span></a>Getting started</h2>
 
-<p><em>talaria</em> is composed of four components:</p>
+<p><em>talaria</em> is composed of two components:</p>
 
 <ul>
 <li>
@@ -104,7 +110,9 @@ name of the content.</li>
 <li>
 <code>talaria.css</code> (or <code>talaria.sass</code> for <a href="http://sass-lang.com/">SASS</a>
 users) which provide a basic github-esque styling for the comments</li>
-</ul><p>Assuming you have installed <em>talaria</em> with bower and are using jekyll,
+</ul>
+
+<p>Assuming you have installed <em>talaria</em> with bower and are using jekyll,
 we need to customize <em>talaria</em> so that it knows where to find your
 content sources (such as your blog posts).</p>
 
@@ -119,13 +127,33 @@ rel="stylesheet" type="text/css"&gt;</code> (or add an <code>@import</code> stat
 for the SASS in your main sass file)</li>
 <li>Add <code>&lt;script type="text/javascript"
 src="/bower_components/talaria/dist/talaria.js"&gt;&lt;/script&gt;</code> (after
-jQuery!)</li>
+jQuery and async.js!)</li>
 <li>
 <em>After</em> including <code>talaria.js</code> call <code>talaria.init(CONFIG)</code> at some
 point, where <code>CONFIG</code> is an object that <em>must</em> contain appropriate
 values for <code>REPOSITORY_NAME</code> and <code>GITHUB_USERNAME</code>. For example:</li>
-</ol><div class="highlight highlight-js"><pre><span class="nx">talaria</span><span class="p">.</span><span class="nx">init</span><span class="p">({</span><span class="nx">REPOSITORY_NAME</span><span class="o">:</span> <span class="s1">'m2w.github.com'</span><span class="p">,</span> <span class="nx">GITHUB_USERNAME</span><span class="o">:</span> <span class="s1">'m2w'</span><span class="p">});</span>
+</ol>
+
+<div class="highlight highlight-js"><pre><span class="nx">talaria</span><span class="p">.</span><span class="nx">init</span><span class="p">({</span><span class="nx">REPOSITORY_NAME</span><span class="o">:</span> <span class="s1">'m2w.github.com'</span><span class="p">,</span> <span class="nx">GITHUB_USERNAME</span><span class="o">:</span> <span class="s1">'m2w'</span><span class="p">});</span>
 </pre></div>
+
+<p>Should you prefer to use gist comments instead of commit comments
+(recommended, but requires changes to your build process) the
+following options are also required: <code>USE_GISTS</code> and <code>GIST_MAPPINGS</code>.</p>
+
+<p><code>USE_GISTS</code> is a simple boolean flag. <code>GIST_MAPPINGS</code> is a URL which
+returns a JSON file that contains an object as follows:</p>
+
+<p><code>
+{:FILENAME: {"id": :GIST_ID, "permalink": :permalink},
+:FILENAME2: {"id": :GIST_ID, "permalink": :permalink}}
+</code></p>
+
+<p>The expected format of the mapping is currently still
+experimental. Nonetheless, it requires that you generate the mappings
+as part of your build process, have a look at
+<a href="https://github.com/m2w/m2w.github.com/blob/master/Rakefile#L152">my Rakefile</a>
+for inspiration.</p>
 
 <p>If required you have a couple of further customization options,
 include these as required in your <code>CONFIG</code> object:</p>
@@ -143,7 +171,20 @@ valid jQuery selector that will be unique for each content source</li>
 <li>
 <code>PAGINATION_SCHEME</code> (default <code>/\/page\d+\//</code>) <em>talaria</em> uses this to
 check whether it should expand comments by default or not</li>
-</ul><p>You're now done, test the setup to ensure everything is working fine
+<li>
+<code>PERMALINK_STYLE</code> (default
+<code>/[\.\w\-_:\/]+\/(\d+)\/(\d+)\/(\d+)\/([\w\-\.]+)$/</code>, which matches
+something along the lines of <code>/:categories/:year/:month/:day/:slug</code>,
+note the missing extension at the end) which controls how talaria
+resolves filenames from permalinks, you can choose between <code>pretty</code>,
+<code>date</code>, <code>none</code> or a custom regex. These correspond to the jekyll
+defaults, if you choose to provide your own regex and you are using
+commit-based comments please have a look at
+<code>extrapolatePathFromPermalink</code> to ensure that it will work as you
+expect it to.</li>
+</ul>
+
+<p>You're now done, test the setup to ensure everything is working fine
 and report any bugs :)</p>
 
 <h3>
@@ -167,7 +208,9 @@ user will only see the post he planned to comment on while on github.</li>
 <li>Avoid commiting non-commentable content along with commentable
 content. e.g. if you regenerate your tag subpages after creating a
 new blog post.</li>
-</ul><p><em>TLDR</em>: commits for commentable content should never include anything beside the content itself.</p>
+</ul>
+
+<p><em>TLDR</em>: commits for commentable content should never include anything beside the content itself.</p>
 
 <h2>
 <a name="fyi" class="anchor" href="#fyi"><span class="octicon octicon-link"></span></a>FYI</h2>
