@@ -1,7 +1,8 @@
 _talaria_ is a commenting system for static sites, like
-[github pages](http://pages.github.com/). It uses github commits to
-locate content and provide a way for others to comment. Check out
-talaria [in action](http://blog.tibidat.com).
+[github pages](http://pages.github.com/). It provides the option to
+provide comments on github hosted content either through github commit
+comments or through gist comments. You can see talaria in action
+[here](http://blog.tibidat.com).
 
 
 # ToC
@@ -26,9 +27,10 @@ To install _talaria_ you have the choice between
 and a plain
 [download](https://github.com/m2w/talaria/releases/tag/0.3.1).
 
-_talaria_ depends on [jQuery](http://jquery.com/).
+_talaria_ depends on [jQuery](http://jquery.com/) and
+[async.js](https://github.com/caolan/async).
 
-Note: _talaria_ isn't yet listed on the bower index.
+Note: _talaria_ is currently not listed on the bower index.
 
 ## Introduction
 
@@ -57,7 +59,7 @@ _talaria_'s needs.
 
 ## Getting started
 
-_talaria_ is composed of four components:
+_talaria_ is composed of two components:
 
 - `talaria.js` which contains the logic to interact with the
   [github API](http://developer.github.com/v3/)
@@ -77,7 +79,7 @@ This step requires that you modify your site's (base) template.
    for the SASS in your main sass file)
 2. Add `<script type="text/javascript"
    src="/bower_components/talaria/dist/talaria.js"></script>` (after
-   jQuery!)
+   jQuery and async.js!)
 3. *After* including `talaria.js` call `talaria.init(CONFIG)` at some
    point, where `CONFIG` is an object that *must* contain appropriate
    values for `REPOSITORY_NAME` and `GITHUB_USERNAME`. For example:
@@ -85,6 +87,24 @@ This step requires that you modify your site's (base) template.
 ```js
 talaria.init({REPOSITORY_NAME: 'm2w.github.com', GITHUB_USERNAME: 'm2w'});
 ```
+
+Should you prefer to use gist comments instead of commit comments
+(recommended, but requires changes to your build process) the
+following options are also required: `USE_GISTS` and `GIST_MAPPINGS`.
+
+`USE_GISTS` is a simple boolean flag. `GIST_MAPPINGS` is a URL which
+returns a JSON file that contains an object as follows:
+
+``
+{:FILENAME: {"id": :GIST_ID, "permalink": :permalink},
+:FILENAME2: {"id": :GIST_ID, "permalink": :permalink}}
+``
+
+The expected format of the mapping is currently still
+experimental. Nonetheless, it requires that you generate the mappings
+as part of your build process, have a look at
+[my Rakefile](https://github.com/m2w/m2w.github.com/blob/master/Rakefile#L152)
+for inspiration.
 
 If required you have a couple of further customization options,
 include these as required in your `CONFIG` object:
@@ -97,6 +117,16 @@ include these as required in your `CONFIG` object:
   valid jQuery selector that will be unique for each content source
 - `PAGINATION_SCHEME` (default `/\/page\d+\//`) _talaria_ uses this to
   check whether it should expand comments by default or not
+- `PERMALINK_STYLE` (default
+  `/[\.\w\-_:\/]+\/(\d+)\/(\d+)\/(\d+)\/([\w\-\.]+)$/`, which matches
+  something along the lines of `/:categories/:year/:month/:day/:slug`,
+  note the missing extension at the end) which controls how talaria
+  resolves filenames from permalinks, you can choose between `pretty`,
+  `date`, `none` or a custom regex. These correspond to the jekyll
+  defaults, if you choose to provide your own regex and you are using
+  commit-based comments please have a look at
+  `extrapolatePathFromPermalink` to ensure that it will work as you
+  expect it to.
 
 You're now done, test the setup to ensure everything is working fine
 and report any bugs :)
@@ -112,10 +142,10 @@ to customize this to suit your tastes.
 ## Best practices
 
 - Avoid multi-file changesets that contain commentable
-content. e.g. if you update 3 blog posts at once (say you change the
-spelling for a tag), commit each change file seperately. This ensures
-there is no comment overlap between posts. It also guarantees that the
-user will only see the post he planned to comment on while on github.
+  content. e.g. if you update 3 blog posts at once (say you change the
+  spelling for a tag), commit each change file seperately. This ensures
+  there is no comment overlap between posts. It also guarantees that the
+  user will only see the post he planned to comment on while on github.
 - Avoid commiting non-commentable content along with commentable
   content. e.g. if you regenerate your tag subpages after creating a
   new blog post.
