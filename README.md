@@ -127,6 +127,8 @@ include these as required in your `CONFIG` object:
   commit-based comments please have a look at
   `extrapolatePathFromPermalink` to ensure that it will work as you
   expect it to.
+- `CACHE_TIMEOUT` (default 1hr) used to determine whether local data
+  is stale or not.
 
 You're now done, test the setup to ensure everything is working fine
 and report any bugs :)
