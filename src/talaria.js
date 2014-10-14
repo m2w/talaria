@@ -334,7 +334,7 @@ var talaria = (function ($, async) {
      * HTML manipulator
      */
     function showErrorForGist(permalinkElement, error, gist) {
-        var gistUrl = CONFIG.GIST_URL_ROOT + gist.id;
+        var gistUrl = CONFIG.GIST_URL_ROOT + gist.id + '#comments';
         wrapperTemplate(gist.id,
                         gistUrl,
                         gist.comments.length,
@@ -393,7 +393,7 @@ var talaria = (function ($, async) {
     }
 
     function displayCommentsForGist(permalinkElement, gist) {
-        var gistUrl = CONFIG.GIST_URL_ROOT + gist.id,
+        var gistUrl = CONFIG.GIST_URL_ROOT + gist.id + '#comments',
             wrapper = wrapperTemplate(gist.id,
                                       gistUrl,
                                       gist.comments.length,
