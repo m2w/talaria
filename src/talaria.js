@@ -26,7 +26,7 @@ var talaria = (function ($, async) {
         case 'date':
             return /[\.\w\-_:\/]+\/(\d+)\/(\d+)\/(\d+)\/([\w\-\.]+)\.html$/;
         case 'none':
-            if (CONFIG.USE_COMMITS) {
+            if (!CONFIG.USE_GISTS) {
                 throw new Error('When using commit-based comments,' +
                                 ' talaria requires the use of' +
                                 ' permalinks that include the date' +
@@ -273,13 +273,18 @@ var talaria = (function ($, async) {
                                       '[href="' + gist.permalink + '"]');
                     relevant = permalink.length > 0;
                     if (relevant) {
-                        mappings.push({'gist':gistMappings[entry], 'linkobj': permalink});
+                        mappings.push({'gist':gistMappings[entry],
+                                       'linkobj': permalink});
                     }
                 }
             }
             addGistComments(mappings);
-        }).fail(function (error) { // misconfiguration, either incorrect json or file not available
-            // TODO: error handling
+        }).fail(function (error) {
+            // Misconfiguration: either incorrect JSON or
+            // mappings file not available
+            $('div.talaria-wrapper div.talaria-load-error').text(
+                'Unable to load comments.').show();
+            $('talaria-wrapper div.talaria-comment-count').hide();
         });
     }
 
@@ -319,9 +324,8 @@ var talaria = (function ($, async) {
 
     function addGistComments(mappings) {
         async.eachLimit(mappings, 5, handleGistMapping, function (err) {
-            if (err) { // rate-limit reached, invalid id, other?
-                // TODO: error handling
-                console.log('done: ' + err);
+            if (err) {
+                console.warn('Unable to map comments to articles: ' + err);
             }
         });
     }
@@ -329,13 +333,11 @@ var talaria = (function ($, async) {
     /*
      * HTML manipulator
      */
-
     function showErrorForGist(permalinkElement, gist) {
         $('#talaria-wrap-' + gist.id + ' div.talaria-load-error').text(
             'The github API rate-limit has been reached. Unable to load comments.').show();
         // TODO: fix the error message, could be 403 or 404
         $('#talaria-wrap-' + gist.id + ' div.talaria-comment-count').hide();
-
     }
 
     function addCommentWrapper(permalinkElement, commentData) {
