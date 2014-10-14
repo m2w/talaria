@@ -316,7 +316,7 @@ var talaria = (function ($, async) {
                 callback();
             }).
             fail(function (error, gist) {
-                showErrorForGist(mapping.linkobj, gist);
+                showErrorForGist(mapping.linkobj, error, gist);
                 // we don't really need special error handling beyond this
                 callback();
             });
@@ -333,11 +333,29 @@ var talaria = (function ($, async) {
     /*
      * HTML manipulator
      */
-    function showErrorForGist(permalinkElement, gist) {
-        $('#talaria-wrap-' + gist.id + ' div.talaria-load-error').text(
-            'The github API rate-limit has been reached. Unable to load comments.').show();
-        // TODO: fix the error message, could be 403 or 404
-        $('#talaria-wrap-' + gist.id + ' div.talaria-comment-count').hide();
+    function showErrorForGist(permalinkElement, error, gist) {
+        var gistUrl = CONFIG.GIST_URL_ROOT + gist.id;
+        wrapperTemplate(gist.id,
+                        gistUrl,
+                        gist.comments.length,
+                        (location.pathname === '/' ||
+                         CONFIG.PAGINATION_SCHEME.test(location.pathname)));
+        switch (error.status) {
+            case 403:
+                $('#talaria-wrap-' + gist.id + ' div.talaria-load-error').text(
+                    'The github API rate-limit has been reached. Unable to load comments.').show();
+                $('#talaria-wrap-' + gist.id + ' div.talaria-comment-count').hide();
+                break;
+            case 404:
+                $('#talaria-wrap-' + gist.id + ' div.talaria-load-error').text(
+                    'Unable to find a matching gist.').show();
+                $('#talaria-wrap-' + gist.id + ' div.talaria-comment-count').hide();
+                break;
+            default:
+                $('#talaria-wrap-' + gist.id + ' div.talaria-load-error').text(
+                    'An error occurred retrieving comments for this post.').show();
+                $('#talaria-wrap-' + gist.id + ' div.talaria-comment-count').hide();
+        }
     }
 
     function addCommentWrapper(permalinkElement, commentData) {
