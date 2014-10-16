@@ -1,0 +1,29 @@
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>talaria.js Tests</title>
+  <link rel="stylesheet" href="bower_components/mocha/mocha.css" />
+</head>
+<body>
+  <div id="mocha"></div>
+
+  <article>
+    <a class="permalink" href="/this/is/a/test">Testing!</a>
+    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+  </article>
+
+  <script src="bower_components/jquery/dist/jquery.min.js"></script>
+  <script src="bower_components/async/lib/async.js"></script>
+  <script src="bower_components/sinon/lib/sinon.js"></script>
+  <script src="bower_components/mocha/mocha.js"></script>
+  <script>mocha.setup('bdd');</script>
+  <script src="src/talaria.js"></script>
+  <script src="test/main.js"></script>
+  <script>
+    mocha.checkLeaks();
+    mocha.slow();
+    mocha.globals(['jQuery']);
+    mocha.run();
+  </script>
+</body>
+</html>

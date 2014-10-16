@@ -139,6 +139,15 @@ var talaria = (function ($, async) {
         }
     }
 
+    function updateConfig(config) {
+        CONFIG = $.extend({}, DEFAULTS, config);
+        CONFIG.GISTS_API_ENDPOINT = 'https://api.github.com/users/' + CONFIG.GITHUB_USERNAME + '/gists';
+        CONFIG.COMMIT_API_ENDPOINT = 'https://api.github.com/repos/' + CONFIG.GITHUB_USERNAME + '/' + CONFIG.REPOSITORY_NAME + '/commits';
+        CONFIG.REPO_COMMIT_URL_ROOT = 'https://github.com/' + CONFIG.GITHUB_USERNAME + '/' + CONFIG.REPOSITORY_NAME + '/commit/';
+        CONFIG.GIST_URL_ROOT = 'https://gist.github.com/' + CONFIG.GITHUB_USERNAME + '/';
+        CONFIG.PERMALINK_STYLE = setPermalinkRegex();
+    }
+
     /*
      * Templates
      */
@@ -404,13 +413,7 @@ var talaria = (function ($, async) {
      * Initialization function
      */
     var initialize = function (config) {
-        CONFIG = $.extend({}, DEFAULTS, config);
-        CONFIG.GISTS_API_ENDPOINT = 'https://api.github.com/users/' + CONFIG.GITHUB_USERNAME + '/gists';
-        CONFIG.COMMIT_API_ENDPOINT = 'https://api.github.com/repos/' + CONFIG.GITHUB_USERNAME + '/' + CONFIG.REPOSITORY_NAME + '/commits';
-        CONFIG.REPO_COMMIT_URL_ROOT = 'https://github.com/' + CONFIG.GITHUB_USERNAME + '/' + CONFIG.REPOSITORY_NAME + '/commit/';
-        CONFIG.GIST_URL_ROOT = 'https://gist.github.com/' + CONFIG.GITHUB_USERNAME + '/';
-        CONFIG.PERMALINK_STYLE = setPermalinkRegex();
-
+        updateConfig(config);
         ensureAsyncAvailable();
 
         $(document).ready(function () {
@@ -433,6 +436,13 @@ var talaria = (function ($, async) {
     };
 
     return {
-        init: initialize
+        init: initialize,
+        test: {
+            init: function (config) {
+                updateConfig(config);
+            },
+            gists: retrieveGistBasedComments,
+            commits: retrieveCommitBasedComments
+        }
     };
 })($, async);
