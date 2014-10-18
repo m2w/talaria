@@ -318,9 +318,13 @@ var talaria = (function ($, async) {
         }).fail(function (error) {
             // Misconfiguration: either incorrect JSON or
             // mappings file not available
+            var wrapper = wrapperTemplate('', '', 0, false);
+            $(CONFIG.PERMALINK_IDENTIFIER).each(function () {
+                    $(this).parents('article').append(wrapper);
+            });
             $('div.talaria-wrapper div.talaria-load-error').text(
                 'Unable to load comments.').show();
-            $('talaria-wrapper div.talaria-comment-count').hide();
+            $('div.talaria-wrapper div.talaria-comment-count').hide();
         });
     }
 
