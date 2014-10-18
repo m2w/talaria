@@ -39,7 +39,8 @@ var talaria = (function ($, async) {
 
     function extrapolatePathFromPermalink(permalinkUrl) {
         return permalinkUrl.replace(CONFIG.PERMALINK_STYLE,
-            CONFIG.COMMENTABLE_CONTENT_PATH_PREFIX + '$1-$2-$3-$4' + CONFIG.CONTENT_SUFFIX);
+                                    CONFIG.COMMENTABLE_CONTENT_PATH_PREFIX +
+                                    '$1-$2-$3-$4' + CONFIG.CONTENT_SUFFIX);
     }
 
     function shortenCommitId(commitId) {
@@ -87,7 +88,8 @@ var talaria = (function ($, async) {
             elapsed = current - previous,
             t = 0;
         if (elapsed < msPerMinute) {
-            return elapsed < justNowLim ? ' just now' : Math.round(elapsed / 1000) + ' seconds ago';
+            return elapsed < justNowLim ?
+                ' just now' : Math.round(elapsed / 1000) + ' seconds ago';
         }
         if (elapsed < msPerHour) {
             t = Math.round(elapsed / msPerMinute);
@@ -110,7 +112,8 @@ var talaria = (function ($, async) {
     }
 
     function isStale(cachedCommentData) {
-        return (new Date().getTime() - cachedCommentData.timestamp) > CONFIG.CACHE_TIMEOUT;
+        return (new Date().getTime() -
+                cachedCommentData.timestamp) > CONFIG.CACHE_TIMEOUT;
     }
 
     function maybeGetCachedVersion(url) {
@@ -135,16 +138,21 @@ var talaria = (function ($, async) {
 
     function ensureAsyncAvailable() {
         if (CONFIG.USE_GISTS && async === {}){
-            throw new Error('talaria requires async.js for gist-based comments.');
+            throw new Error('talaria requires async.js' +
+                            ' for Gist-based comments.');
         }
     }
 
     function updateConfig(config) {
         CONFIG = $.extend({}, DEFAULTS, config);
-        CONFIG.GISTS_API_ENDPOINT = 'https://api.github.com/users/' + CONFIG.GITHUB_USERNAME + '/gists';
-        CONFIG.COMMIT_API_ENDPOINT = 'https://api.github.com/repos/' + CONFIG.GITHUB_USERNAME + '/' + CONFIG.REPOSITORY_NAME + '/commits';
-        CONFIG.REPO_COMMIT_URL_ROOT = 'https://github.com/' + CONFIG.GITHUB_USERNAME + '/' + CONFIG.REPOSITORY_NAME + '/commit/';
-        CONFIG.GIST_URL_ROOT = 'https://gist.github.com/' + CONFIG.GITHUB_USERNAME + '/';
+        CONFIG.GISTS_API_ENDPOINT = 'https://api.github.com/users/' +
+            CONFIG.GITHUB_USERNAME + '/gists';
+        CONFIG.COMMIT_API_ENDPOINT = 'https://api.github.com/repos/' +
+            CONFIG.GITHUB_USERNAME + '/' + CONFIG.REPOSITORY_NAME + '/commits';
+        CONFIG.REPO_COMMIT_URL_ROOT = 'https://github.com/' +
+            CONFIG.GITHUB_USERNAME + '/' + CONFIG.REPOSITORY_NAME + '/commit/';
+        CONFIG.GIST_URL_ROOT = 'https://gist.github.com/' +
+            CONFIG.GITHUB_USERNAME + '/';
         CONFIG.PERMALINK_STYLE = setPermalinkRegex();
     }
 
@@ -218,7 +226,8 @@ var talaria = (function ($, async) {
 
     function grabCommentsForCommit(commit, callback) {
         if (commit.commit.comment_count > 0) {
-            $.getJSON(CONFIG.COMMIT_API_ENDPOINT + '/' + commit.sha + '/comments').
+            $.getJSON(CONFIG.COMMIT_API_ENDPOINT + '/' +
+                      commit.sha + '/comments').
                 then(function (comments) {
                     callback(null, comments);
                 }, function (error) {
@@ -229,7 +238,8 @@ var talaria = (function ($, async) {
     }
 
     function aggregateComments(commits, callback) {
-        async.mapSeries(commits, grabCommentsForCommit, function (err, comments) {
+        async.mapSeries(commits, grabCommentsForCommit,
+                        function (err, comments) {
             // sort comments by created_at?
             callback(err, commits, [].concat.apply([], comments));
         });
@@ -255,7 +265,8 @@ var talaria = (function ($, async) {
                 // TODO: ensure that the datastructure works fine
                 cacheCommentData(url, comments);
                 var lastCommit = latest(commits);
-                var latestCommitUrl = CONFIG.REPO_COMMIT_URL_ROOT + lastCommit.sha + '#all_commit_comments';
+                var latestCommitUrl = CONFIG.REPO_COMMIT_URL_ROOT +
+                        lastCommit.sha + '#all_commit_comments';
                 var wrapper = wrapperTemplate(lastCommit.sha,
                                               latestCommitUrl,
                                               comments.length,
@@ -263,7 +274,8 @@ var talaria = (function ($, async) {
                                                CONFIG.PAGINATION_SCHEME.test(location.pathname)));
                 var commentHtml = comments.map(commentTemplate);
                 permalinkElement.parents('article').append(wrapper);
-                $('#talaria-comment-list-' + lastCommit.sha).prepend(commentHtml);
+                $('#talaria-comment-list-' + lastCommit.sha).
+                    prepend(commentHtml);
                 addClickHandlers(lastCommit.sha, url);
                 cb(null);
             });
