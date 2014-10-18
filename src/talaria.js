@@ -323,8 +323,8 @@ var talaria = (function ($, async) {
                     $(this).parents('article').append(wrapper);
             });
             $('div.talaria-wrapper div.talaria-load-error').text(
-                'Unable to load comments.').show();
-            $('div.talaria-wrapper div.talaria-comment-count').hide();
+                'Unable to load comments.').removeClass('hide');
+            $('div.talaria-wrapper div.talaria-comment-count').addClass('hide');
         });
     }
 
@@ -384,18 +384,18 @@ var talaria = (function ($, async) {
         switch (error.status) {
             case 403:
                 $('#talaria-wrap-' + gist.id + ' div.talaria-load-error').text(
-                    'The github API rate-limit has been reached. Unable to load comments.').show();
-                $('#talaria-wrap-' + gist.id + ' div.talaria-comment-count').hide();
+                    'The github API rate-limit has been reached. Unable to load comments.').removeClass('hide');
+                $('#talaria-wrap-' + gist.id + ' div.talaria-comment-count').addClass('hide');
                 break;
             case 404:
                 $('#talaria-wrap-' + gist.id + ' div.talaria-load-error').text(
-                    'Unable to find a matching gist.').show();
-                $('#talaria-wrap-' + gist.id + ' div.talaria-comment-count').hide();
+                    'Unable to find a matching gist.').removeClass('hide');
+                $('#talaria-wrap-' + gist.id + ' div.talaria-comment-count').addClass('hide');
                 break;
             default:
                 $('#talaria-wrap-' + gist.id + ' div.talaria-load-error').text(
-                    'An error occurred retrieving comments for this post.').show();
-                $('#talaria-wrap-' + gist.id + ' div.talaria-comment-count').hide();
+                    'An error occurred retrieving comments for this post.').removeClass('hide');
+                $('#talaria-wrap-' + gist.id + ' div.talaria-comment-count').addClass('hide');
         }
     }
 
@@ -403,7 +403,7 @@ var talaria = (function ($, async) {
         $('a#talaria-show-' + id).click(function (e) {
             e.preventDefault();
             $('div#talaria-wrap-' + id + ' .talaria-comment-list-wrapper').fadeIn();
-            $(this).hide();
+            $(this).addClass('hide');
         });
         $('a#talaria-add-' + id).click(function () {
             if (CONFIG.LOCAL_STORAGE_SUPPORTED) {
