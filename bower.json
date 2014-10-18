@@ -1,27 +1,28 @@
 {
-    "name": "talaria",
-    "main": [
-        "dist/talaria.js",
-        "dist/talaria.css"
-    ],
-    "version": "0.3.1",
-    "homepage": "https://github.com/m2w/talaria",
-    "authors": [
-        "Moritz <moritz@tibidat.com>"
-    ],
-    "description": "A commenting system for static sites based on github commit-comments",
-    "license": "MIT",
-    "dependencies": {
-        "jquery": "2.1.0"
-    },
-    "ignore": [
-        "**/.*",
-        "bower_components",
-        "node_modules",
-        "config.rb"
-    ]
+  "name": "talaria",
+  "main": [
+    "dist/talaria.js",
+    "dist/talaria.css"
+  ],
+  "version": "0.3.2",
+  "homepage": "https://github.com/m2w/talaria",
+  "authors": [
+    "Moritz <moritz@tibidat.com>"
+  ],
+  "description": "A commenting system for static sites using the github API.",
+  "license": "MIT",
+  "dependencies": {
+    "jquery": "2.1.1",
+    "async": "0.9.0"
+  },
   "devDependencies": {
     "mocha": "1.21.5",
     "sinon": "1.10.3"
   },
+  "ignore": [
+    "**/.*",
+    "bower_components",
+    "node_modules",
+    "config.rb"
+  ]
 }
