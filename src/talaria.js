@@ -336,15 +336,16 @@ var talaria = (function ($, async) {
         if (cache !== undefined) {
             dfd.resolve(cache);
         } else {
-            $.getJSON('https://api.github.com/gists/' + gist.id + '/comments').
-                then(function (comments) {
-                    gist.comments = comments;
-                    cacheCommentData(gist.permalink, gist);
-                    dfd.resolve(gist);
-                    }, function (error) {
-                        gist.comments = [];
-                        dfd.reject(error, gist);
-                    });
+            $.getJSON('https://api.github.com/gists/' + gist.id + '/comments',
+                      function (comments) {
+                          gist.comments = comments;
+                          cacheCommentData(gist.permalink, gist);
+                          dfd.resolve(gist);
+                      }).
+                fail(function (error) {
+                    gist.comments = [];
+                    dfd.reject(error, gist);
+                });
         }
         return dfd.promise();
     }
