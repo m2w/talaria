@@ -1,20 +1,50 @@
 var expect = chai.expect;
 
 describe('talaria', function () {
-    before(function () {
+    beforeEach(function () {
         server = sinon.fakeServer.create();
-        talaria.test.init({USE_GISTS: true, GITHUB_USERNAME: 'm2w',
-                           GIST_MAPPINGS: '/mappings.json'});
-    });
-    after(function () {
-        server.restore();
     });
     afterEach(function () {
+        // remove any talaria generated html
         $('div.talaria-wrapper').remove();
+        server.restore();
     });
     describe('using gists', function () {
+        before(function () {
+            talaria.test.init({USE_GISTS: true, GITHUB_USERNAME: 'm2w',
+                               GIST_MAPPINGS: '/mappings.json'});
+        });
+        after(function () {
+            server.restore();
+        });
         it('should retrieve all comments for a post');
-        it('should display an error message when unable to locate a gist');
+        it('should display an error message when unable to locate a gist',
+           function () {
+               server.respondWith('/mappings.json',
+                                  [200, {"Content-Type": "application/json"},
+                                   JSON.stringify(
+                                       {"test.md":
+                                        {"permalink": "/this/is/a/test",
+                                         "id": "asdf"}}
+                                   )]
+               );
+               server.respondWith(
+                   /https:\/\/api.github.com\/gists\/idonotexist/,
+                   function (req) {
+                       req.respond(404, {},
+                                   JSON.stringify(
+                                       {
+                                           "message": "Not Found",
+                                           "documentation_url": "https://developer.github.com/v3"
+                                       }
+                                   ));
+                   }
+               );
+
+               talaria.test.gists();
+               server.respond();
+
+           });
         it('should display an error when unable to load the gist<=>post mappings',
            function () {
                server.respondWith('/mappings.json',
@@ -36,15 +66,12 @@ describe('talaria', function () {
            function () {
                server.respondWith(
                    // FIXME: currently this never fires, not sure why...
-                   /\/gists\/asdf\/comments/,
-                   function (req) {
-                       console.log(req);
-                       req.respond(403, {"X-RateLimit-Remaining": 0},
-                                   JSON.stringify(
-                                       {"message": "API rate limit exceeded for 127.0.0.1. (But here's the good news: Authenticated requests get a higher rate limit. Check out the documentation for more details.)",
-                                        "documentation_url": "https://developer.github.com/v3/#rate-limiting"
-                        }));
-                   }
+                   /gists\/asdf\/comments/gi,
+                   [403, {"X-RateLimit-Remaining": 0},
+                    JSON.stringify(
+                        {"message": "API rate limit exceeded for 127.0.0.1. (But here's the good news: Authenticated requests get a higher rate limit. Check out the documentation for more details.)",
+                         "documentation_url": "https://developer.github.com/v3/#rate-limiting"
+                        })]
                );
                server.respondWith('/mappings.json',
                                   [200, {"Content-Type": "application/json"},
