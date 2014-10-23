@@ -17,7 +17,75 @@ describe('talaria', function () {
         after(function () {
             server.restore();
         });
-        it('should retrieve all comments for a post');
+        it('should retrieve and display all comments for a post',
+           function () {
+               server.respondWith('/mappings.json',
+                                  [200, {"Content-Type": "application/json"},
+                                   JSON.stringify(
+                                       {"test.md":
+                                        {"permalink": "/this/is/a/test",
+                                         "id": "dummy1"}}
+                                   )]
+               );
+               server.respondWith(
+                   /https:\/\/api.github.com\/gists\/dummy1\/comments/,
+                   function (req) {
+                       req.respond(404, {},
+                                   JSON.stringify(
+                                       [
+                                           {
+                                               "id": 1,
+                                               "url":
+                                               "https://api.github.com/gists/ab21536bde9abe8dc3e8/comments/1",
+                                               "body": "Just commenting for the sake of commenting",
+                                               "user": {
+                                                   "login": "octocat",
+                                                   "id": 1,
+                                                   "avatar_url":
+                                                   "https://github.com/images/error/octocat_happy.gif",
+                                                   "gravatar_id": "",
+                                                   "url":
+                                                   "https://api.github.com/users/octocat",
+                                                   "html_url":
+                                                   "https://github.com/octocat",
+                                                   "followers_url":
+                                                   "https://api.github.com/users/octocat/followers",
+                                                   "following_url":
+                                                   "https://api.github.com/users/octocat/following{/other_user}",
+                                                   "gists_url":
+                                                   "https://api.github.com/users/octocat/gists{/gist_id}",
+                                                   "starred_url":
+                                                   "https://api.github.com/users/octocat/starred{/owner}{/repo}",
+                                                   "subscriptions_url":
+                                                   "https://api.github.com/users/octocat/subscriptions",
+                                                   "organizations_url":
+                                                   "https://api.github.com/users/octocat/orgs",
+                                                   "repos_url":
+                                                   "https://api.github.com/users/octocat/repos",
+                                                   "events_url":
+                                                   "https://api.github.com/users/octocat/events{/privacy}",
+                                                   "received_events_url":
+                                                   "https://api.github.com/users/octocat/received_events",
+                                                   "type": "User",
+                                                   "site_admin": false
+                                               },
+                                               "created_at":
+                                               "2011-04-18T23:23:56Z",
+                                               "updated_at":
+                                               "2011-04-18T23:23:56Z"
+                                           }
+                                       ]
+                                   ));
+                   }
+               );
+
+               talaria.test.gists();
+               server.respond();
+
+               expect($('div.talaria-wrapper div.talaria-load-error').hasClass('hide')).to.be.true;
+               expect($('div.talaria-wrapper div.talaria-comment-bubble')).to.have.length(1)
+               expect($('#1')).to.have.length(1);
+           });
         it('should display an error message when unable to locate a gist',
            function () {
                server.respondWith('/mappings.json',
@@ -29,7 +97,7 @@ describe('talaria', function () {
                                    )]
                );
                server.respondWith(
-                   /https:\/\/api.github.com\/gists\/idonotexist/,
+                   /https:\/\/api.github.com\/gists\/idonotexist\/comments/,
                    function (req) {
                        req.respond(404, {},
                                    JSON.stringify(
@@ -44,6 +112,13 @@ describe('talaria', function () {
                talaria.test.gists();
                server.respond();
 
+               var err = $('div.talaria-wrapper div.talaria-load-error');
+               expect(err.hasClass('hide')).to.be.false;
+               expect(err.text()).to.equal('Unable to find a matching gist.');
+               expect(
+                   $('div.talaria-wrapper div.talaria-comment-count').
+                       hasClass('hide')
+               ).to.be.true;
            });
         it('should display an error when unable to load the gist<=>post mappings',
            function () {
