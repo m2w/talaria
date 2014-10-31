@@ -1,5 +1,5 @@
-/*global document,$,sessionStorage,location*/
-var talaria = (function ($) {
+/*global document,$,async,sessionStorage,location*/
+var talaria = (function ($, async) {
     'use strict';
 
     /*
@@ -12,28 +12,57 @@ var talaria = (function ($) {
             CACHE_TIMEOUT: 60 * 60 * 1000, // cache github data for 1 hour
             PAGINATION_SCHEME: /\/page\d+\//,
             LOCAL_STORAGE_SUPPORTED: false,
-            PERMALINK_IDENTIFIER: 'a.permalink'
+            PERMALINK_IDENTIFIER: 'a.permalink',
+            PERMALINK_STYLE: /[\.\w\-_:\/]+\/(\d+)\/(\d+)\/(\d+)\/([\w\-\.]+)$/
         };
 
     /*
      * Utilities
      */
-    function extrapolatePathFromPermalink(permalink_url) {
-        return permalink_url.replace(/[\.\w\-_:\/]+\/(\d+)\/(\d+)\/(\d+)\/([\w\-_\.]+)$/,
-            CONFIG.COMMENTABLE_CONTENT_PATH_PREFIX + '$1-$2-$3-$4' + CONFIG.CONTENT_SUFFIX);
+    function setPermalinkRegex() {
+        switch (CONFIG.PERMALINK_STYLE) {
+        case 'pretty':
+            return /[\.\w\-_:\/]+\/(\d+)\/(\d+)\/(\d+)\/([\w\-\.]+)\/$/;
+        case 'date':
+            return /[\.\w\-_:\/]+\/(\d+)\/(\d+)\/(\d+)\/([\w\-\.]+)\.html$/;
+        case 'none':
+            if (!CONFIG.USE_GISTS) {
+                throw new Error('When using commit-based comments,' +
+                                ' talaria requires the use of' +
+                                ' permalinks that include the date' +
+                                ' of the post');
+            }
+            return /[\.\w\-_:\/]+\/([\w\-\.]+)\.html$/;
+        default: return CONFIG.PERMALINK_STYLE;
+        }
     }
 
-    function shortenCommitId(commit_id) {
-        return commit_id.substr(0, 7);
+    function extrapolatePathFromPermalink(permalinkUrl) {
+        return permalinkUrl.replace(CONFIG.PERMALINK_STYLE,
+                                    CONFIG.COMMENTABLE_CONTENT_PATH_PREFIX +
+                                    '$1-$2-$3-$4' + CONFIG.CONTENT_SUFFIX);
+    }
+
+    function shortenCommitId(commitId) {
+        return commitId.substr(0, 7);
     }
 
     function localStorageSupported() {
         try {
-            sessionStorage.setItem("dummy", "dummy");
-            sessionStorage.removeItem("dummy");
+            sessionStorage.setItem('dummy', 'dummy');
+            sessionStorage.removeItem('dummy');
             return true;
         } catch (e) {
             return false;
+        }
+    }
+
+    function cacheCommentData(key, data) {
+        if (CONFIG.LOCAL_STORAGE_SUPPORTED) {
+            sessionStorage.setItem(key, JSON.stringify({
+                timestamp: new Date().getTime(),
+                commentData: data
+            }));
         }
     }
 
@@ -59,7 +88,8 @@ var talaria = (function ($) {
             elapsed = current - previous,
             t = 0;
         if (elapsed < msPerMinute) {
-            return elapsed < justNowLim ? ' just now' : Math.round(elapsed / 1000) + ' seconds ago';
+            return elapsed < justNowLim ?
+                ' just now' : Math.round(elapsed / 1000) + ' seconds ago';
         }
         if (elapsed < msPerHour) {
             t = Math.round(elapsed / msPerMinute);
@@ -81,41 +111,72 @@ var talaria = (function ($) {
         return 'about ' + t + ' year' + maybePluralize(t) + ' ago';
     }
 
-    function isStale(cached_comment_data) {
-        return (new Date().getTime() - cached_comment_data.timestamp) > CONFIG.CACHE_TIMEOUT;
+    function isStale(cachedCommentData) {
+        return (new Date().getTime() -
+                cachedCommentData.timestamp) > CONFIG.CACHE_TIMEOUT;
     }
 
     function maybeGetCachedVersion(url) {
-        var cache = sessionStorage.getItem(url);
-        if (cache) {
-            cache = JSON.parse(cache);
-            if (!isStale(cache)) {
-                return cache.comment_data;
+        var cache;
+        if (CONFIG.LOCAL_STORAGE_SUPPORTED) {
+            cache = sessionStorage.getItem(url);
+            if (cache) {
+                cache = JSON.parse(cache);
+                if (!isStale(cache)) {
+                    return cache.commentData;
+                }
             }
         }
         return undefined;
     }
 
+    function latest(commits) {
+        return commits.length > 0 ?commits.sort(function (a, b) {
+            return new Date(a.committer.date) > new Date(b.committer.date);
+        })[0] : undefined;
+    }
+
+    function ensureAsyncAvailable() {
+        if (CONFIG.USE_GISTS && async === {}){
+            throw new Error('talaria requires async.js' +
+                            ' for Gist-based comments.');
+        }
+    }
+
+    function updateConfig(config) {
+        CONFIG = $.extend({}, DEFAULTS, config);
+        CONFIG.GISTS_API_ENDPOINT = 'https://api.github.com/users/' +
+            CONFIG.GITHUB_USERNAME + '/gists';
+        CONFIG.COMMIT_API_ENDPOINT = 'https://api.github.com/repos/' +
+            CONFIG.GITHUB_USERNAME + '/' + CONFIG.REPOSITORY_NAME + '/commits';
+        CONFIG.REPO_COMMIT_URL_ROOT = 'https://github.com/' +
+            CONFIG.GITHUB_USERNAME + '/' + CONFIG.REPOSITORY_NAME + '/commit/';
+        CONFIG.GIST_URL_ROOT = 'https://gist.github.com/' +
+            CONFIG.GITHUB_USERNAME + '/';
+        CONFIG.PERMALINK_STYLE = setPermalinkRegex();
+    }
+
     /*
-     * Templating
+     * Templates
      */
-    function wrap(commit_sha, commit_url, ccount, comments_hidden) {
-            return '<div id="talaria-wrap-' + commit_sha + '" class="talaria-wrapper">' +
+    function wrapperTemplate(id, url, ccount, commentsHidden) {
+        commentsHidden = ccount === 0 || commentsHidden;
+        return '<div id="talaria-wrap-' + id + '" class="talaria-wrapper">' +
             '  <div class="talaria-load-error hide">' +
             '    Unable to retrieve comments for this post.' +
             '  </div>' +
-            '  <div class="talaria-comment-count' + (comments_hidden ? '' : ' hide') + '">' +
-            '    <a id="talaria-show-' + commit_sha + '" href="' + commit_url + '">' + (ccount === 0 ? 'Be the first to comment' : (ccount + ' comment' + (ccount === 1 ? '' : 's'))) + '</a>' +
+            '  <div class="talaria-comment-count' + (commentsHidden ? '' : ' hide') + '">' +
+            '    <a id="talaria-show-' + id + '" href="' + url + '">' + (ccount === 0 ? 'Be the first to comment' : (ccount + ' comment' + (ccount === 1 ? '' : 's'))) + '</a>' +
             '  </div>' +
-            '  <div class="talaria-comment-list-wrapper' + (comments_hidden ? ' hide' : '') + '">' +
+            '  <div class="talaria-comment-list-wrapper' + (commentsHidden ? ' hide' : '') + '">' +
             '    <div class="talaria-header">' +
-            '      <h3>Comments <small>via <a class="talaria-last-commit-href" href="' + commit_url + '">github</a></small></h3>' +
+            '      <h3>Comments <small>via <a class="talaria-last-commit-href" href="' + url + '">github</a></small></h3>' +
             '    </div>' +
-            '    <div class="talaria-comment-list">' +
+            '    <div class="talaria-comment-list" id="talaria-comment-list-' + id + '">' +
             '      <!-- comments are dynamically added here -->' +
             '    </div>' +
             '    <div class="talaria-align-right">' +
-            '      <a id="talaria-add-' + commit_sha + '" class="talaria-add-comment-button" href="' + commit_url + '">' +
+            '      <a id="talaria-add-' + id + '" class="talaria-add-comment-button" href="' + url + '">' +
             '        <button type="submit">Add a Comment</button>' +
             '      </a>' +
             '    </div>' +
@@ -123,8 +184,16 @@ var talaria = (function ($) {
             '</div>';
     }
 
-    function comment_tpl(comment) {
-        var now = new Date().getTime();
+    function commentTemplate(comment) {
+        var now = new Date().getTime(),
+            headerLeft;
+        if (comment.commit_id !== undefined) {
+            headerLeft = '<span class="talaria-header-left">&nbsp;commented on <a class="talaria-commit-sha" href="' + comment.html_url + '">' +
+                '<code>' + shortenCommitId(comment.commit_id) + '</code></a></span>';
+        } else {
+            headerLeft = '<span class="talaria-header-left">&nbsp;wrote</span>';
+        }
+
         return '<div id="' + comment.id + '" class="talaria-comment-bubble">' +
             '  <a href="#">' +
             '    <img class="talaria-comment-author-avatar" height="48" width="48" src="' + comment.user.avatar_url + '" />' +
@@ -133,127 +202,236 @@ var talaria = (function ($) {
             '    <div class="talaria-comment-bubble-inner">' +
             '      <div class="talaria-comment-header">' +
             '        <a class="talaria-author-nick" href="' + comment.user.html_url + '"><b>' + comment.user.login + '</b></a>' +
-            '        <span class="talaria-header-left">&nbsp;commented on <a class="talaria-commit-sha" href="' + comment.html_url + '"><code>' + shortenCommitId(comment.commit_id) + '</code></a></span>' +
+            headerLeft +
             '        <span class="talaria-header-right">' + timeDifference(now, new Date(comment.updated_at)) + '</span>' +
             '      </div>' +
-            '      <div class="talaria-comment-body">' + comment.body_html + '</div>' +
+            '      <div class="talaria-comment-body">' + comment.body_html || comment.body + '</div>' +
             '    </div>' +
             '  </div>' +
             '</div>';
     }
 
-
     /*
-     * github API interaction
+     * github API interaction - Commit-based
      */
-    function retrieveCommentsForCommit(commit, path) {
-        var dfd = new $.Deferred();
-        $.getJSON(CONFIG.COMMIT_API_ENDPOINT + '/' + commit.sha + '/comments').then(function (comments) {
-            dfd.resolve({
-                commits: commit,
-                comments: comments,
-                path: path
-            });
-        }, function (error) {
-            dfd.reject(error.status);
-        });
-        return dfd;
-    }
-
-    function combineDataForFile(path, commits) {
-        var dfd = new $.Deferred(),
-            deferred_comments = commits.map(function (commit) {
-                return retrieveCommentsForCommit(commit, path);
-            });
-        $.when.apply($, deferred_comments).done(function () {
-            var data = Array.prototype.slice.call(arguments, 0),
-                root;
-            if (data && data.length) {
-                root = {
-                    path: path,
-                    commits: [],
-                    comments: []
-                };
-                data = data.reduce(function (acc, elem) {
-                    acc.commits = acc.commits.concat(elem.commits);
-                    acc.comments = acc.comments.concat(elem.comments);
-                    return acc;
-                }, root);
-            }
-            dfd.resolve(data);
-        });
-        return dfd;
-    }
-
-    function getDataForPathWithDeferred(path) {
-        var dfd = new $.Deferred();
+    function grabCommitsForFile(path, callback) {
         $.getJSON(CONFIG.COMMIT_API_ENDPOINT, {
             path: path
         }).then(function (commits) {
-            combineDataForFile(path, commits).done(function (dataForPath) {
-                dfd.resolve(dataForPath);
-            });
+            callback(null, commits);
         }, function (error) {
-            dfd.reject(error.status);
+            callback(error);
         });
-        return dfd;
     }
 
-    function retrieveDataForPermalink(url) {
-        var path = extrapolatePathFromPermalink(url),
-            cache;
-        if (CONFIG.LOCAL_STORAGE_SUPPORTED) {
-            cache = maybeGetCachedVersion(url);
-            if (cache) {
-                var dfd = new $.Deferred();
-                dfd.resolve(cache);
-                return dfd;
-            }
-            return getDataForPathWithDeferred(path);
+    function grabCommentsForCommit(commit, callback) {
+        if (commit.commit.comment_count > 0) {
+            $.getJSON(CONFIG.COMMIT_API_ENDPOINT + '/' +
+                      commit.sha + '/comments').
+                then(function (comments) {
+                    callback(null, comments);
+                }, function (error) {
+                    callback(error, []);
+                });
         }
-        return getDataForPathWithDeferred(path);
+        callback(null, []);
+    }
+
+    function aggregateComments(commits, callback) {
+        async.mapSeries(commits, grabCommentsForCommit,
+                        function (err, comments) {
+            // sort comments by created_at?
+            callback(err, commits, [].concat.apply([], comments));
+        });
+    }
+
+    function grabCommitComments(permalinkElement, cb) {
+        var url = permalinkElement.href,
+            path = extrapolatePathFromPermalink(url),
+            cache = maybeGetCachedVersion(url);
+        if (cache === undefined) {
+            async.waterfall([
+                function (callback) {
+                    grabCommitsForFile(path, callback);
+                },
+                function (commits, callback) {
+                    aggregateComments(commits, callback);
+                }
+            ], function (err, commits, comments) {
+                if (err) {
+                    // TODO: handle errors?
+                    cb(err);
+                }
+                // TODO: ensure that the datastructure works fine
+                cacheCommentData(url, comments);
+                var lastCommit = latest(commits);
+                var latestCommitUrl = CONFIG.REPO_COMMIT_URL_ROOT +
+                        lastCommit.sha + '#all_commit_comments';
+                var wrapper = wrapperTemplate(lastCommit.sha,
+                                              latestCommitUrl,
+                                              comments.length,
+                                              (location.pathname === '/' ||
+                                               CONFIG.PAGINATION_SCHEME.test(location.pathname)));
+                var commentHtml = comments.map(commentTemplate);
+                permalinkElement.parents('article').append(wrapper);
+                $('#talaria-comment-list-' + lastCommit.sha).
+                    prepend(commentHtml);
+                addClickHandlers(lastCommit.sha, url);
+                cb(null);
+            });
+        } else {
+            // check no cache version
+            cb(null);
+        }
+    }
+
+    function retrieveCommitBasedComments() {
+        async.eachLimit($(CONFIG.PERMALINK_IDENTIFIER), 5,
+                        grabCommitComments, function (err) {
+                            // TODO: handle errors
+        });
+    }
+
+    /*
+     * github API interaction - Gist-based
+     */
+    function retrieveGistBasedComments() {
+        var mappings = [],
+            relevant = false,
+            gist;
+        // TODO: cache the mappings
+        $.getJSON(CONFIG.GIST_MAPPINGS, function (gistMappings) {
+            // TODO: this can be optimized
+            for (var entry in gistMappings) {
+                if (gistMappings.hasOwnProperty(entry)) {
+                    gist = gistMappings[entry];
+                    var permalink = $(CONFIG.PERMALINK_IDENTIFIER +
+                                      '[href="' + gist.permalink + '"]');
+                    relevant = permalink.length > 0;
+                    if (relevant) {
+                        mappings.push({'gist':gistMappings[entry],
+                                       'linkobj': permalink});
+                    }
+                }
+            }
+            addGistComments(mappings);
+        }).fail(function (error) {
+            // Misconfiguration: either incorrect JSON or
+            // mappings file not available
+            var wrapper = wrapperTemplate('', '', 0, false);
+            $(CONFIG.PERMALINK_IDENTIFIER).each(function () {
+                    $(this).parents('article').append(wrapper);
+            });
+            $('div.talaria-wrapper div.talaria-load-error').text(
+                'Unable to load comments.').removeClass('hide');
+            $('div.talaria-wrapper div.talaria-comment-count').addClass('hide');
+        });
+    }
+
+    function retrieveGistComments(mapping) {
+        var gist = mapping.gist,
+            cache = maybeGetCachedVersion(gist.permalink),
+            dfd = new $.Deferred();
+
+        if (cache !== undefined) {
+            dfd.resolve(cache);
+        } else {
+            $.getJSON('https://api.github.com/gists/' + gist.id + '/comments',
+                      function (comments) {
+                          gist.comments = comments;
+                          cacheCommentData(gist.permalink, gist);
+                          dfd.resolve(gist);
+                      }).
+                fail(function (error) {
+                    gist.comments = [];
+                    dfd.reject(error, gist);
+                });
+        }
+        return dfd.promise();
+    }
+
+    function handleGistMapping(mapping, callback) {
+        retrieveGistComments(mapping).
+            done(function (gist) {
+                displayCommentsForGist(mapping.linkobj, gist);
+                callback();
+            }).
+            fail(function (error, gist) {
+                showErrorForGist(mapping.linkobj, error, gist);
+                // we don't really need special error handling beyond this
+                callback();
+            });
+    }
+
+    function addGistComments(mappings) {
+        async.eachLimit(mappings, 5, handleGistMapping, function (err) {
+            if (err) {
+                console.warn('Unable to map comments to articles: ' + err);
+            }
+        });
     }
 
     /*
      * HTML manipulator
      */
-    function updateCommentMeta(permalink_element, comment_data) {
-        var wrapper,
-            latest_commit,
-            latest_commit_url;
-        if (comment_data.commits.length) {
-            latest_commit = comment_data.commits.sort(function (a, b) {
-                return new Date(a.commit.author.date) < new Date(b.commit.author.date);
-            })[0];
-        } else {
-            latest_commit = comment_data.commits;
+    function showErrorForGist(permalinkElement, error, gist) {
+        var gistUrl = CONFIG.GIST_URL_ROOT + gist.id + '#comments',
+            wrapper = wrapperTemplate(gist.id,
+                                      gistUrl,
+                                      gist.comments.length,
+                                      (location.pathname === '/' ||
+                                       CONFIG.PAGINATION_SCHEME.test(location.pathname)));
+        permalinkElement.parents('article').append(wrapper);
+        switch (error.status) {
+            case 403:
+                $('#talaria-wrap-' + gist.id + ' div.talaria-load-error').text(
+                    'The github API rate-limit has been reached. Unable to load comments.').removeClass('hide');
+                $('#talaria-wrap-' + gist.id + ' div.talaria-comment-count').addClass('hide');
+                break;
+            case 404:
+                $('#talaria-wrap-' + gist.id + ' div.talaria-load-error').text(
+                    'Unable to find a matching gist.').removeClass('hide');
+                $('#talaria-wrap-' + gist.id + ' div.talaria-comment-count').addClass('hide');
+                break;
+            default:
+                $('#talaria-wrap-' + gist.id + ' div.talaria-load-error').text(
+                    'An error occurred retrieving comments for this post.').removeClass('hide');
+                $('#talaria-wrap-' + gist.id + ' div.talaria-comment-count').addClass('hide');
         }
-        latest_commit_url = CONFIG.REPO_COMMIT_URL_ROOT + latest_commit.sha + '#all_commit_comments';
-        wrapper = wrap(latest_commit.sha,
-                          latest_commit_url,
-                          comment_data.comments.length,
-                          (location.pathname === "/" ||
-                           CONFIG.PAGINATION_SCHEME.test(location.pathname)));
-        permalink_element.parents('article').append(wrapper);
-        $('a#talaria-show-' + latest_commit.sha).click(function (e) {
+    }
+
+    function addClickHandlers(id, url) {
+        $('a#talaria-show-' + id).click(function (e) {
             e.preventDefault();
-            $('div#talaria-wrap-' + latest_commit.sha + ' .talaria-comment-list-wrapper').fadeIn();
-            $(this).hide();
+            $('div#talaria-wrap-' + id + ' .talaria-comment-list-wrapper').fadeIn();
+            $(this).addClass('hide');
         });
-        $('a#talaria-add-' + latest_commit.sha).click(function () {
+        $('a#talaria-add-' + id).click(function () {
             if (CONFIG.LOCAL_STORAGE_SUPPORTED) {
-                sessionStorage.removeItem(permalink_element.get(0).href);
+                sessionStorage.removeItem(url);
             }
         });
+    }
+
+    function displayCommentsForGist(permalinkElement, gist) {
+        var gistUrl = CONFIG.GIST_URL_ROOT + gist.id + '#comments',
+            wrapper = wrapperTemplate(gist.id,
+                                      gistUrl,
+                                      gist.comments.length,
+                                      (location.pathname === '/' ||
+                                       CONFIG.PAGINATION_SCHEME.test(location.pathname))),
+            commentHtml = gist.comments.map(commentTemplate);
+        permalinkElement.parents('article').append(wrapper);
+        $('#talaria-comment-list-' + gist.id).prepend(commentHtml);
+        addClickHandlers(gist.id, gist.permalink);
     }
 
     /*
      * Initialization function
      */
     var initialize = function (config) {
-        CONFIG = $.extend({}, DEFAULTS, config);
-        CONFIG.COMMIT_API_ENDPOINT = 'https://api.github.com/repos/' + CONFIG.GITHUB_USERNAME + '/' + CONFIG.REPOSITORY_NAME + '/commits';
-        CONFIG.REPO_COMMIT_URL_ROOT = 'https://github.com/' + CONFIG.GITHUB_USERNAME + '/' + CONFIG.REPOSITORY_NAME + '/commit/';
+        updateConfig(config);
+        ensureAsyncAvailable();
 
         $(document).ready(function () {
             if (localStorageSupported) {
@@ -266,35 +444,22 @@ var talaria = (function ($) {
                 }
             });
 
-            $(CONFIG.PERMALINK_IDENTIFIER).map(function () {
-                var permalink = this;
-                $.when(retrieveDataForPermalink(permalink.href)).then(function (data) {
-                    if ($.isEmptyObject(data)) {
-                        var parent = $(permalink).parents('article');
-                        parent.find('div.talaria-load-error').show();
-                        parent.find('div.talaria-comment-count').hide();
-                    } else {
-                        var commentHtml = data.comments.sort(byAscendingDate).map(comment_tpl);
-                        updateCommentMeta($(permalink), data);
-                        $(permalink).parents('article').find('div.talaria-comment-list').prepend(commentHtml);
-                        if (CONFIG.LOCAL_STORAGE_SUPPORTED) {
-                            sessionStorage.setItem(permalink.href, JSON.stringify({
-                                timestamp: new Date().getTime(),
-                                comment_data: data
-                            }));
-                        }
-                    }
-                }, function (status) {
-                    var parent = $(permalink).parents('article');
-                    parent.find('div.talaria-load-error').text(
-                        'The github API rate-limit has been reached. Unable to load comments.').show();
-                    parent.find('div.talaria-comment-count').hide();
-                });
-            });
+            if (CONFIG.USE_GISTS) {
+                retrieveGistBasedComments();
+            } else {
+                retrieveCommitBasedComments();
+            }
         });
     };
 
     return {
-        init: initialize
+        init: initialize,
+        test: {
+            init: function (config) {
+                updateConfig(config);
+            },
+            gists: retrieveGistBasedComments,
+            commits: retrieveCommitBasedComments
+        }
     };
-})($);
+})($, async);

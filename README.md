@@ -27,6 +27,9 @@ To install _talaria_ you have the choice between
 and a plain
 [download](https://github.com/m2w/talaria/releases/tag/0.3.1).
 
+*CARE*: if you want to use the experimental gist backend, please or
+ use `bower install m2w/talaria#master`.
+
 _talaria_ depends on [jQuery](http://jquery.com/) and
 [async.js](https://github.com/caolan/async).
 
