@@ -1,4 +1,4 @@
-/*global document,$,async,sessionStorage,location*/
+/*global document,$,async,sessionStorage,location,console*/
 var talaria = (function ($, async) {
     'use strict';
 
@@ -131,7 +131,7 @@ var talaria = (function ($, async) {
     }
 
     function latest(commits) {
-        return commits.length > 0 ?commits.sort(function (a, b) {
+        return commits.length > 0 ? commits.sort(function (a, b) {
             return new Date(a.committer.date) > new Date(b.committer.date);
         })[0] : undefined;
     }
@@ -241,7 +241,7 @@ var talaria = (function ($, async) {
     function aggregateComments(commits, callback) {
         async.reduce(commits, [], grabCommentsForCommit,
                      function (err, comments) {
-            // sort comments by created_at?
+            comments.sort(byAscendingDate);
             callback(err, commits, comments);
         });
     }
@@ -256,19 +256,19 @@ var talaria = (function ($, async) {
                     grabCommitsForFile(path, callback);
                 },
                 function (commits, callback) {
-                    console.log('going to aggregate');
                     aggregateComments(commits, callback);
                 }
             ], function (err, commits, comments) {
                 if (err) {
                     // TODO: handle errors?
                     cb(err);
+                } else {
+                    // TODO: prune commits data before caching it
+                    var cacheData = {'comments': comments, 'commits': commits};
+                    cacheCommentData(url, cacheData);
+                    displayCommentsForCommits(permalinkElement, cacheData);
+                    cb(null);
                 }
-                // TODO: prune commits data before caching it
-                var cacheData = {'comments': comments, 'commits': commits};
-                cacheCommentData(url, cacheData);
-                displayCommentsForCommits(permalinkElement, cacheData);
-                cb(null);
             });
         } else {
             displayCommentsForCommits(permalinkElement, cache);
@@ -276,22 +276,32 @@ var talaria = (function ($, async) {
         }
     }
 
+    // TODO: ugly, improve
     function displayCommentsForCommits(permalinkElement, commitsAndComments) {
         var commits = commitsAndComments.commits,
-            comments = commitsAndComments.comments,
-            lastCommit = latest(commits),
-            latestCommitUrl = CONFIG.REPO_COMMIT_URL_ROOT +
-            lastCommit.sha + '#all_commit_comments';
-        var wrapper = wrapperTemplate(lastCommit.sha,
-                                      latestCommitUrl,
-                                      comments.length,
-                                      (location.pathname === '/' ||
-                                       CONFIG.PAGINATION_SCHEME.test(location.pathname)));
-        var commentHtml = comments.map(commentTemplate);
-        $(permalinkElement).parents('article').append(wrapper);
-        $('#talaria-comment-list-' + lastCommit.sha).
-            prepend(commentHtml);
-        addClickHandlers(lastCommit.sha, permalinkElement.href);
+            comments = commitsAndComments.comments;
+        if (commits.length === 0) {
+            var wrapper = wrapperTemplate('', '', 0, false),
+                article = $(permalinkElement).parents('article');
+            article.append(wrapper);
+            article.find('div.talaria-load-error').text(
+                'Unable to find commits for this post.').removeClass('hide');
+            article.find('div.talaria-comment-count').addClass('hide');
+        } else {
+            var lastCommit = latest(commits),
+                latestCommitUrl = CONFIG.REPO_COMMIT_URL_ROOT +
+                lastCommit.sha + '#all_commit_comments';
+            var wrapper = wrapperTemplate(lastCommit.sha,
+                                          latestCommitUrl,
+                                          comments.length,
+                                          (location.pathname === '/' ||
+                                           CONFIG.PAGINATION_SCHEME.test(location.pathname)));
+            var commentHtml = comments.map(commentTemplate);
+            $(permalinkElement).parents('article').append(wrapper);
+            $('#talaria-comment-list-' + lastCommit.sha).
+                prepend(commentHtml);
+            addClickHandlers(lastCommit.sha, permalinkElement.href);
+        }
     }
 
     function retrieveCommitBasedComments() {
