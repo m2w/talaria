@@ -136,6 +136,12 @@ var talaria = (function ($, async) {
         })[0] : undefined;
     }
 
+    function pruneCommitData(commits) {
+        return commits.map(function (c) {
+            return {'sha': c.sha, 'committer': {'date': c.committer.date}};
+        });
+    }
+
     function ensureAsyncAvailable() {
         if (CONFIG.USE_GISTS && async === {}){
             throw new Error('talaria requires async.js' +
@@ -195,7 +201,7 @@ var talaria = (function ($, async) {
         }
 
         return '<div id="' + comment.id + '" class="talaria-comment-bubble">' +
-            '  <a href="#">' +
+            '  <a class="talaria-author-nick" href="' + comment.user.html_url + '">' +
             '    <img class="talaria-comment-author-avatar" height="48" width="48" src="' + comment.user.avatar_url + '" />' +
             '  </a>' +
             '  <div class="talaria-comment-bubble-content">' +
@@ -260,11 +266,9 @@ var talaria = (function ($, async) {
                 }
             ], function (err, commits, comments) {
                 if (err) {
-                    // TODO: handle errors?
                     cb(err);
                 } else {
-                    // TODO: prune commits data before caching it
-                    var cacheData = {'comments': comments, 'commits': commits};
+                    var cacheData = {'comments': comments, 'commits': pruneCommitData(commits)};
                     cacheCommentData(url, cacheData);
                     displayCommentsForCommits(permalinkElement, cacheData);
                     cb(null);
@@ -279,10 +283,11 @@ var talaria = (function ($, async) {
     // TODO: ugly, improve
     function displayCommentsForCommits(permalinkElement, commitsAndComments) {
         var commits = commitsAndComments.commits,
-            comments = commitsAndComments.comments;
+            comments = commitsAndComments.comments,
+            article = $(permalinkElement).parents('article'),
+            wrapper;
         if (commits.length === 0) {
-            var wrapper = wrapperTemplate('', '', 0, false),
-                article = $(permalinkElement).parents('article');
+            wrapper = wrapperTemplate('', '', 0, false);
             article.append(wrapper);
             article.find('div.talaria-load-error').text(
                 'Unable to find commits for this post.').removeClass('hide');
@@ -290,23 +295,24 @@ var talaria = (function ($, async) {
         } else {
             var lastCommit = latest(commits),
                 latestCommitUrl = CONFIG.REPO_COMMIT_URL_ROOT +
-                lastCommit.sha + '#all_commit_comments';
-            var wrapper = wrapperTemplate(lastCommit.sha,
-                                          latestCommitUrl,
-                                          comments.length,
-                                          (location.pathname === '/' ||
-                                           CONFIG.PAGINATION_SCHEME.test(location.pathname)));
-            var commentHtml = comments.map(commentTemplate);
-            $(permalinkElement).parents('article').append(wrapper);
+                lastCommit.sha + '#all_commit_comments',
+                commentHtml = comments.map(commentTemplate);
+            wrapper = wrapperTemplate(lastCommit.sha,
+                                      latestCommitUrl,
+                                      comments.length,
+                                      (location.pathname === '/' ||
+                                       CONFIG.PAGINATION_SCHEME.test(location.pathname)));
+            article.append(wrapper);
             $('#talaria-comment-list-' + lastCommit.sha).
                 prepend(commentHtml);
-            addClickHandlers(lastCommit.sha, permalinkElement.href);
+            addClickHandlers(lastCommit.sha, permalinkElement.href, comments.length > 0);
         }
     }
 
     function retrieveCommitBasedComments() {
         async.eachLimit($(CONFIG.PERMALINK_IDENTIFIER), 5,
                         grabCommitComments, function (err) {
+                            // possible errors: 403
                             // TODO: handle errors
         });
     }
@@ -419,11 +425,13 @@ var talaria = (function ($, async) {
         }
     }
 
-    function addClickHandlers(id, url) {
+    function addClickHandlers(id, url, hasComments) {
         $('a#talaria-show-' + id).click(function (e) {
-            e.preventDefault();
-            $('div#talaria-wrap-' + id + ' .talaria-comment-list-wrapper').fadeIn();
-            $(this).addClass('hide');
+            if (hasComments) {
+                e.preventDefault();
+                $('div#talaria-wrap-' + id + ' .talaria-comment-list-wrapper').fadeIn();
+                $(this).addClass('hide');
+            }
         });
         $('a#talaria-add-' + id).click(function () {
             if (CONFIG.LOCAL_STORAGE_SUPPORTED) {
@@ -442,7 +450,7 @@ var talaria = (function ($, async) {
             commentHtml = gist.comments.map(commentTemplate);
         permalinkElement.parents('article').append(wrapper);
         $('#talaria-comment-list-' + gist.id).prepend(commentHtml);
-        addClickHandlers(gist.id, gist.permalink);
+        addClickHandlers(gist.id, gist.permalink, gist.comments.length > 0);
     }
 
     /*

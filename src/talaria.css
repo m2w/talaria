@@ -2,6 +2,8 @@ div.talaria-wrapper a {
   background: none; }
 div.talaria-wrapper div {
   margin: 0; }
+div.talaria-wrapper .hide {
+  display: none; }
 div.talaria-wrapper div.talaria-load-error {
   background-color: #E8E8EE;
   padding: 0.5rem; }
@@ -11,8 +13,6 @@ div.talaria-wrapper div.talaria-header h3 {
   margin: 0; }
   div.talaria-wrapper div.talaria-header h3 small {
     font-size: 0.7rem; }
-div.talaria-wrapper div.hide {
-  display: none; }
 div.talaria-wrapper div.talaria-wrapper {
   padding: 1em; }
 div.talaria-wrapper div.talaria-comment-list {
