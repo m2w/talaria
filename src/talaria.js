@@ -410,7 +410,7 @@ var talaria = (function ($, async) {
         switch (error.status) {
             case 403:
                 $('#talaria-wrap-' + gist.id + ' div.talaria-load-error').text(
-                    'The github API rate-limit has been reached. Unable to load comments.').removeClass('hide');
+                    'The Github API rate-limit has been reached. Unable to load comments.').removeClass('hide');
                 $('#talaria-wrap-' + gist.id + ' div.talaria-comment-count').addClass('hide');
                 break;
             case 404:
