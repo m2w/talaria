@@ -245,11 +245,15 @@ var talaria = (function ($, async) {
     }
 
     function aggregateComments(commits, callback) {
-        async.reduce(commits, [], grabCommentsForCommit,
-                     function (err, comments) {
-            comments.sort(byAscendingDate);
-            callback(err, commits, comments);
-        });
+        if (commits.length !== 0) {
+            async.reduce(commits, [], grabCommentsForCommit,
+                         function (err, comments) {
+                             comments.sort(byAscendingDate);
+                             callback(err, commits, comments);
+                         });
+        } else {
+            callback(null, [], []);
+        }
     }
 
     function grabCommitComments(permalinkElement, cb) {
