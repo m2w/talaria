@@ -1,0 +1,33 @@
+{
+  "name": "talaria",
+  "version": "0.4.0",
+  "description": "A commenting system for static content using Github as its backend.",
+  "main": "gulpfile.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "dependencies": {
+    "gulp": "^3.5.5",
+    "gulp-compass": "^1.1.4",
+    "gulp-jshint": "^1.5.0",
+    "gulp-rename": "^1.2.0",
+    "gulp-ruby-sass": "^0.4.0",
+    "gulp-uglify": "^0.2.1"
+  },
+  "devDependencies": {
+    "sinon": "^1.11.1",
+    "chai": "^1.10.0",
+    "mocha": "^2.0.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/m2w/talaria.git"
+  },
+  "author": "Moritz <moritz@tibidat.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/m2w/talaria/issues"
+  },
+  "homepage": "https://github.com/m2w/talaria",
+  "private": true
+}

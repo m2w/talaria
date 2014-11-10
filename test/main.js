@@ -265,8 +265,6 @@ describe('using gists', function () {
 describe('using commits', function () {
     before(function () {
         server = sinon.fakeServer.create();
-        // grab commits
-        // grab comments for each using sha
         server.respondWith(/ratelimited/,
                            [403, {"X-RateLimit-Remaining": 0},
                             rateLimitedResponse]);
@@ -285,7 +283,6 @@ describe('using commits', function () {
         server.respondWith(/asdf124/,
                            [200, {},
                             commitCommentsResponse]);
-        // update DOM
     });
     after(function () {
         server.restore();

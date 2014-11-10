@@ -8,31 +8,31 @@ gulp.task('default', ['compress', 'copy', 'sass']);
 
 gulp.task('watch', function() {
     gulp.watch('./src/*.js', ['lint']);
-})
+});
 
 gulp.task('sass', function() {
-    gulp.src('./src/*.sass')
+    gulp.src('./lib/*.sass')
         .pipe(sass({compass: true}))
-        .pipe(gulp.dest('./src'));
-    gulp.src('./src/*.sass')
+        .pipe(gulp.dest('./lib'));
+    gulp.src('./lib/*.sass')
         .pipe(sass({compass: true, style: 'compressed'}))
         .pipe(gulp.dest('./dist'));
 });
 
 gulp.task('compress', function() {
-    gulp.src('./src/talaria.js')
+    gulp.src('./lib/talaria.js')
         .pipe(rename('talaria.min.js'))
         .pipe(uglify({outSourceMap: true}))
         .pipe(gulp.dest('./dist'));
 });
 
 gulp.task('copy', function() {
-    gulp.src('./src/talaria.js')
+    gulp.src('./lib/talaria.js')
         .pipe(gulp.dest('./dist'));
 });
 
 gulp.task('lint', function() {
-    gulp.src('./src/*.js')
+    gulp.src('./lib/*.js')
         .pipe(jshint({'maxdepth': 2,
                       'strict': true,
                       'unused': 'strict',
