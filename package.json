@@ -7,18 +7,18 @@
     "lib": "lib"
   },
   "dependencies": {
-    "gulp": "^3.5.5",
-    "gulp-compass": "^1.1.4",
-    "gulp-jshint": "^1.5.0",
-    "gulp-rename": "^1.2.0",
-    "gulp-ruby-sass": "^0.4.0",
-    "gulp-uglify": "^0.2.1"
+    "gulp": "~3.8.10",
+    "gulp-compass": "~2.0.1",
+    "gulp-jshint": "~1.9.0",
+    "gulp-rename": "~1.2.0",
+    "gulp-ruby-sass": "~0.7.1",
+    "gulp-beautify": "~1.1.1"
   },
   "devDependencies": {
-    "sinon": "^1.11.1",
-    "chai": "^1.10.0",
-    "mocha": "^2.0.1",
-    "buster": "^0.7.11"
+    "sinon": "~1.11.1",
+    "chai": "~1.10.0",
+    "mocha": "~2.0.1",
+    "buster": "~0.7.17"
   },
   "repository": {
     "type": "git",

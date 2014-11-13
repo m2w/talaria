@@ -10,9 +10,10 @@ gulp.task('watch', function() {
     gulp.watch('./src/*.js', ['lint']);
 });
 
+// FIXME: Note https://github.com/sindresorhus/gulp-ruby-sass/issues/156
 gulp.task('sass', function() {
     gulp.src('./lib/*.sass')
-        .pipe(sass({compass: true}))
+        .pipe(sass({compass: true, style: 'expanded'}))
         .pipe(gulp.dest('./lib'));
     gulp.src('./lib/*.sass')
         .pipe(sass({compass: true, style: 'compressed'}))
