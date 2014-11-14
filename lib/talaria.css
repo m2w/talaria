@@ -1,46 +1,62 @@
 div.talaria-wrapper a {
-  background: none; }
+  background: none;
+}
 div.talaria-wrapper div {
-  margin: 0; }
+  margin: 0;
+}
 div.talaria-wrapper .hide {
-  display: none; }
+  display: none;
+}
 div.talaria-wrapper div.talaria-load-error {
   background-color: #E8E8EE;
-  padding: 0.5rem; }
+  padding: 0.5rem;
+}
 div.talaria-wrapper div.talaria-comment-count {
-  text-align: right; }
+  text-align: right;
+}
 div.talaria-wrapper div.talaria-header h3 {
-  margin: 0; }
-  div.talaria-wrapper div.talaria-header h3 small {
-    font-size: 0.7rem; }
+  margin: 0;
+}
+div.talaria-wrapper div.talaria-header h3 small {
+  font-size: 0.7rem;
+}
 div.talaria-wrapper div.talaria-wrapper {
-  padding: 1em; }
+  padding: 1em;
+}
 div.talaria-wrapper div.talaria-comment-list {
-  margin-bottom: 0.5rem; }
+  margin-bottom: 0.5rem;
+}
 div.talaria-wrapper div.talaria-comment-bubble {
   margin-top: 1rem;
   line-height: 1.4;
-  font: 13px Helvetica, arial, freesans, clean, sans-serif; }
-  div.talaria-wrapper div.talaria-comment-bubble + div.talaria-comment-bubble {
-    margin-top: 0.5rem; }
+  font: 13px Helvetica, arial, freesans, clean, sans-serif;
+}
+div.talaria-wrapper div.talaria-comment-bubble + div.talaria-comment-bubble {
+  margin-top: 0.5rem;
+}
 div.talaria-wrapper code {
   color: #666;
   font-size: 11px;
-  font-family: Consolas, "Liberation Mono", Courier, monospace; }
+  font-family: Consolas, "Liberation Mono", Courier, monospace;
+}
 div.talaria-wrapper a > img {
-  text-decoration: none; }
+  text-decoration: none;
+}
 div.talaria-wrapper img {
   position: relative;
   float: left;
-  border-radius: 3px; }
+  border-radius: 3px;
+}
 div.talaria-wrapper div.talaria-comment-bubble-content {
   position: relative;
   margin-left: 60px;
   padding: 3px;
   background: #eee;
-  border-radius: 3px; }
+  border-radius: 3px;
+}
 div.talaria-wrapper div.talaria-comment-body {
-  padding: 0.5rem; }
+  padding: 0.5rem;
+}
 div.talaria-wrapper div.talaria-comment-bubble-content:before {
   content: "";
   display: block;
@@ -51,12 +67,14 @@ div.talaria-wrapper div.talaria-comment-bubble-content:before {
   border-color: rgba(238, 238, 238, 0) #eee rgba(238, 238, 238, 0) rgba(238, 238, 238, 0);
   position: absolute;
   left: -10px;
-  top: 15px; }
+  top: 15px;
+}
 div.talaria-wrapper div.talaria-comment-bubble-inner {
   min-height: 32px;
   border: 1px solid #CACACA;
   background-color: #fff;
-  margin: 0px; }
+  margin: 0px;
+}
 div.talaria-wrapper div.talaria-comment-header {
   height: 33px;
   padding: 0 10px 0 6px;
@@ -69,9 +87,11 @@ div.talaria-wrapper div.talaria-comment-header {
   background-image: -webkit-linear-gradient(#f8f8f8, #e1e1e1);
   background-image: linear-gradient(#f8f8f8, #e1e1e1);
   background-repeat: repeat-x;
-  font-size: 12px; }
+  font-size: 12px;
+}
 div.talaria-wrapper div.talaria-align-right {
-  text-align: right; }
+  text-align: right;
+}
 div.talaria-wrapper a.talaria-author-nick {
   max-width: 600px;
   line-height: 33px;
@@ -80,7 +100,8 @@ div.talaria-wrapper a.talaria-author-nick {
   text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.7);
   overflow: hidden;
   white-space: nowrap;
-  text-overflow: ellipsis; }
+  text-overflow: ellipsis;
+}
 div.talaria-wrapper span.talaria-header-right {
   float: right;
   display: inline-block;
@@ -91,10 +112,12 @@ div.talaria-wrapper span.talaria-header-right {
   font-style: normal;
   color: #777;
   text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.7);
-  line-height: 33px; }
+  line-height: 33px;
+}
 div.talaria-wrapper span.talaria-header-left {
   font-size: 11px;
-  text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.7); }
+  text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.7);
+}
 div.talaria-wrapper a.talaria-add-comment-button > button {
   position: relative;
   display: inline-block;
@@ -122,6 +145,5 @@ div.talaria-wrapper a.talaria-add-comment-button > button {
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
-  -webkit-appearance: none; }
-
-/*# sourceMappingURL=talaria.css.map */
+  -webkit-appearance: none;
+}

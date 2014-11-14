@@ -4,7 +4,7 @@ var rename = require('gulp-rename');
 var sass = require('gulp-ruby-sass');
 var jshint = require('gulp-jshint');
 
-gulp.task('default', ['compress', 'copy', 'sass']);
+gulp.task('default', ['compress', 'copy']);
 
 gulp.task('watch', function() {
     gulp.watch('./src/*.js', ['lint']);

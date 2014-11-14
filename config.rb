@@ -1,4 +1,4 @@
 css_dir = "dist"
-sass_dir = "src"
+sass_dir = "lib"
 output_style = :compressed
 line_comments = false
