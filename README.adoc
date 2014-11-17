@@ -1,11 +1,13 @@
 = talaria
+:toc:
+:toc-placement!:
 
 talaria is a commenting system for static sites, using Github as
 backend. It currently supports gist- and commit-based commenting.
 
 You can see talaria in action http://blog.tibidat.com[here].
 
-:toc:
+toc::[]
 
 == Overview
 
