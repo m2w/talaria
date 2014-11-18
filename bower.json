@@ -12,7 +12,6 @@
   "description": "A commenting system for static sites using the Github API.",
   "license": "MIT",
   "dependencies": {
-    "jquery": "^2.1.1",
     "bluebird": "~2.3.11"
   },
   "ignore": [
