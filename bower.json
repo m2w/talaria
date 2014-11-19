@@ -9,7 +9,7 @@
   "authors": [
     "Moritz <moritz@tibidat.com>"
   ],
-  "description": "A commenting system for static sites using the Github API.",
+  "description": "A Github API based commenting system.",
   "license": "MIT",
   "dependencies": {
     "bluebird": "~2.3.11"
