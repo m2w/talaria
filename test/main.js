@@ -219,7 +219,33 @@ describe('talaria with USE_GISTS = true', function () {
                     to.have.length(1);
             });
     });
-    it('should cache any API interaction results');
+    it('should cache any API interaction results', function () {
+        $('a.permalink').attr('href', '/test/200');
+
+        var store = {};
+
+        sinon.stub(sessionStorage, 'getItem', function (key) {
+            return store[key];
+        });
+        sinon.stub(sessionStorage, 'setItem', function (key, value) {
+            return store[key] = value + '';
+        });
+        sinon.stub(sessionStorage, 'removeItem', function (key) {
+            delete store[key];
+            return store;
+        });
+
+        return talaria.init({USE_GISTS: true, GITHUB_USERNAME: 'm2w',
+                             GIST_MAPPINGS: '/mappings.json'}).
+            then(function () {
+                var stored = JSON.parse(store['/test/200']);
+                expect(stored).to.be.an('object');
+                expect(stored.commentData.comments).to.have.length(1);
+                sessionStorage.removeItem.restore();
+                sessionStorage.getItem.restore();
+                sessionStorage.setItem.restore();
+            });
+    });
 });
 describe('talaria with USE_GISTS = false', function () {
     before(function () {
@@ -297,5 +323,29 @@ describe('talaria with USE_GISTS = false', function () {
                    expect($('div.talaria-wrapper div.talaria-comment-bubble')).to.have.length(0);
                });
        });
-    it('should cache any API interaction results');
+    it('should cache any API interaction results', function () {
+        var store = {};
+
+        sinon.stub(sessionStorage, 'getItem', function (key) {
+            return store[key];
+        });
+        sinon.stub(sessionStorage, 'setItem', function (key, value) {
+            return store[key] = value + '';
+        });
+        sinon.stub(sessionStorage, 'removeItem', function (key) {
+            delete store[key];
+            return store;
+        });
+        $('a.permalink').attr('href','/2014/11/08/test-multiple');
+        return talaria.init({GITHUB_USERNAME: 'm2w',
+                             REPOSITORY_NAME: 'm2w.github.com'}).
+            then(function () {
+                var stored = JSON.parse(store['/2014/11/08/test-multiple']);
+                expect(stored).to.be.an('object');
+                expect(stored.commentData.comments).to.have.length(2);
+                sessionStorage.removeItem.restore();
+                sessionStorage.getItem.restore();
+                sessionStorage.setItem.restore();
+            });
+    });
 });
