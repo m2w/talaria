@@ -1,3 +1,5 @@
+// extend is taken from http://youmightnotneedjquery.com/#deep_extend
+// with a minor fix, see https://github.com/HubSpot/youmightnotneedjquery/issues/66
 var extend = function(out) {
     out = out || {};
 
@@ -10,7 +12,7 @@ var extend = function(out) {
         for (var key in obj) {
             if (obj.hasOwnProperty(key)) {
                 if (typeof obj[key] === 'object')
-                    extend(out[key], obj[key]);
+                    out[key] = extend(out[key], obj[key]);
                 else
                     out[key] = obj[key];
             }
