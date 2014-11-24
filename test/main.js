@@ -363,7 +363,6 @@ describe('talaria with USE_GISTS = false', function () {
                });
        });
     it('should cache any API interaction results', function () {
-        // TODO: this is broken... why??
         document.querySelector('a.permalink').setAttribute('href','/2014/11/08/test-multiple');
 
         var store = {};
