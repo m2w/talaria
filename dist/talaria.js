@@ -1,5 +1,5 @@
-/*global $,P,sessionStorage,location*/
-var talaria = (function ($, P) {
+/*global document,P,sessionStorage,location*/
+var talaria = (function (P) {
     'use strict';
 
     /*
@@ -133,18 +133,66 @@ var talaria = (function ($, P) {
     };
 
     var addClickHandlers = function(wrapperId, url, hasComments) {
-        $('a#talaria-show-' + wrapperId).click(function (e) {
+        document.getElementById('talaria-show-' + wrapperId).addEventListener('click', function (e) {
             if (hasComments) {
                 e.preventDefault();
-                $('div#talaria-wrap-' + wrapperId + ' .talaria-comment-list-wrapper').fadeIn();
-                $(this).addClass('hide');
+                document.querySelector('#talaria-wrap-' + wrapperId + ' .talaria-comment-list-wrapper').classList.remove('hide');
+                this.classList.add('hide');
             }
         });
-        $('a#talaria-add-' + wrapperId).click(function () {
+        document.getElementById('talaria-add-' + wrapperId).addEventListener('click', function () {
             if (CONFIG.LOCAL_STORAGE_SUPPORTED) {
                 sessionStorage.removeItem(url);
             }
         });
+    };
+
+    // Taken from http://youmightnotneedjquery.com/#extend
+    var extend = function(out) {
+        out = out || {};
+
+        for (var i = 1; i < arguments.length; i++) {
+            if (!arguments[i])
+                continue;
+
+            for (var key in arguments[i]) {
+                if (arguments[i].hasOwnProperty(key))
+                    out[key] = arguments[i][key];
+            }
+        }
+
+        return out;
+    };
+
+    var getJSON = function (url) {
+        return new Promise(function (resolve, reject) {
+            var req = new XMLHttpRequest();
+            req.open('GET', url, true);
+            req.setRequestHeader('Accept', 'application/vnd.github.v3.html+json');
+            req.onload = function () {
+                if (req.status >= 200 && req.status < 400){
+                    resolve(JSON.parse(req.responseText));
+                } else {
+                    reject(req);
+                }
+            };
+            req.onerror = function () {
+                // TODO: check if this needs params
+                reject(req);
+            };
+            req.send();
+        });
+    };
+
+    var parentArticle = function (node) {
+        var n = node;
+        while(n.parentNode !== null) {
+            if (n.parentElement.tagName === 'ARTICLE') {
+                 return n.parentNode;
+            }
+            n = n.parentNode;
+        }
+        return n;
     };
 
     /*
@@ -175,8 +223,10 @@ var talaria = (function ($, P) {
      * HTML Templates
      */
     var wrapperTemplate = function(id, url, ccount, commentsHidden) {
+        var wrapper = document.createElement('div');
         commentsHidden = ccount === 0 || commentsHidden;
-        return '<div id="talaria-wrap-' + id + '" class="talaria-wrapper">' +
+        wrapper.innerHTML =
+            '<div id="talaria-wrap-' + id + '" class="talaria-wrapper">' +
             '  <div class="talaria-load-error hide">' +
             '    Unable to retrieve comments for this post.' +
             '  </div>' +
@@ -197,6 +247,7 @@ var talaria = (function ($, P) {
             '    </div>' +
             '  </div>' +
             '</div>';
+        return wrapper;
     };
 
     var commentTemplate = function(comment) {
@@ -221,7 +272,7 @@ var talaria = (function ($, P) {
             headerLeft +
             '        <span class="talaria-header-right">' + timeDifference(now, new Date(comment.updated_at)) + '</span>' +
             '      </div>' +
-            '      <div class="talaria-comment-body">' + comment.body_html || comment.body + '</div>' +
+            '      <div class="talaria-comment-body">' + (comment.body_html || comment.body) + '</div>' +
             '    </div>' +
             '  </div>' +
             '</div>';
@@ -232,88 +283,99 @@ var talaria = (function ($, P) {
      */
     var retrieveCommitBasedComments = function() {
         return grabPermalinks().map(function (permalink) {
-            var p = permalink;
-
-            return maybeGetCachedVersion(p.url).then(function (comments) {
-                displayCommentsForCommits(p, cacheData);
-                return comments;
+            return maybeGetCachedVersion(permalink.getAttribute('href')).then(function (cacheData) {
+                displayCommentsForCommits(permalink, cacheData);
+                return cacheData.comments;
             }).catch(function () {
                 // cache miss
                 return grabCommitsForFile(permalink).
-                    reduce(function (acc, commit) {
-                        return grabCommentsForCommit(commit).then(function (comments) {
-                            acc.comments = acc.comments.concat(comments);
-                            acc.commits.push({sha: commit.sha, commit: {committer: {date: commit.commit.committer.date}}});
-                            return acc;
-                        });
-                    }, {comments: [], commits: []}).then(function (data) {
+                    map(function (commit) {
+                        return grabCommentsForCommit(commit);
+                    }).
+                    reduce(function (acc, commitData) {
+                        var commit = commitData.commit;
+                        acc.comments = acc.comments.concat(commitData.comments);
+                        acc.commits.push({sha: commit.sha,
+                                          commit: {committer: {date: commit.commit.committer.date},
+                                                   comment_count: commit.commit.comment_count}});
+                        return acc;
+                    }, {comments: [], commits: []}).
+                    then(function (data) {
                         var cacheData = {'comments': data.comments, 'commits': data.commits};
-                        cacheCommentData(p.url, cacheData);
-                        displayCommentsForCommits(p, cacheData);
+                        cacheCommentData(permalink.getAttribute('href'), cacheData);
+                        displayCommentsForCommits(permalink, cacheData);
                         return data.comments;
                     }).catch(RateLimitedError, function () {
-                        var article = $(p).parents('article'),
+                        var article = parentArticle(permalink),
                             wrapper = wrapperTemplate('', '', 0, false);
 
-                        article.append(wrapper);
-                        article.find('div.talaria-load-error').text(
-                            'The Github API rate-limit has been reached. Unable to load comments.').removeClass('hide');
-                        article.find('div.talaria-comment-count').addClass('hide');
+                        article.appendChild(wrapper);
+
+                        var errorMsg = article.querySelector('div.talaria-load-error'),
+                            commentCount = article.querySelector('div.talaria-comment-count');
+
+                        errorMsg.innerHTML = 'The Github API rate-limit has been reached. Unable to load comments.';
+                        errorMsg.classList.remove('hide');
+                        commentCount.classList.add('hide');
                     }).catch(NotFoundError, function () {
-                        var article = $(p).parents('article'),
+                        var article = parentArticle(permalink),
                             wrapper = wrapperTemplate('', '', 0, false);
 
-                        article.append(wrapper);
-                        article.find('div.talaria-load-error').text(
-                            'Unable to find commits for this post.').removeClass('hide');
-                        article.find('div.talaria-comment-count').addClass('hide');
+                        article.appendChild(wrapper);
+
+                        var errorMsg = article.querySelector('div.talaria-load-error'),
+                            commentCount = article.querySelector('div.talaria-comment-count');
+
+                        errorMsg.innerHTML = 'Unable to find commits for this post.';
+                        errorMsg.classList.remove('hide');
+                        commentCount.classList.add('hide');
                     });
             });
         }, {concurrency: 2});
     };
 
     var grabPermalinks = function () {
-        var links = [];
+        var links = [],
+            permas = document.querySelectorAll(CONFIG.PERMALINK_IDENTIFIER);
 
-        $(CONFIG.PERMALINK_IDENTIFIER).each(function (idx, el) {
-            links.push(el);
-        });
+        for (var i = 0 ; i < permas.length; i++) {
+            links.push(permas[i]);
+        }
         return P.resolve(links);
     };
 
     var grabCommitsForFile = function(permalink) {
         var p = extrapolatePathFromPermalink(permalink.href);
 
-        return P.resolve($.getJSON(CONFIG.COMMIT_API_ENDPOINT, {
-            path: p
-        })).then(function (commits) {
-            if (commits.length === 0) {
-                throw new NotFoundError();
-            }
-            return P.resolve(commits);
-        }).catch(isRateLimited, function () {
-            throw new RateLimitedError();
-        });
+        return getJSON(CONFIG.COMMIT_API_ENDPOINT + '?path=' + p).
+            then(function (commits) {
+                if (commits.length === 0) {
+                    throw new NotFoundError();
+                }
+                return P.resolve(commits);
+            }).catch(isRateLimited, function () {
+                throw new RateLimitedError();
+            });
     };
 
     var grabCommentsForCommit = function(commit) {
         if (commit.commit.comment_count > 0) {
-            return P.resolve($.getJSON(CONFIG.COMMIT_API_ENDPOINT + '/' +
-                                       commit.sha + '/comments')).
+            return getJSON(CONFIG.COMMIT_API_ENDPOINT + '/' +
+                           commit.sha + '/comments').
                 then(function (comments) {
-                    return comments;
+                    return {commit: commit, comments: comments};
                 }).catch(isRateLimited, function () {
                     throw new RateLimitedError();
                 }).catch(function () {
-                    return [];
+                    return {commit: commit, comments: []};
                 });
         }
-        return [];
+        return {commit: commit, comments: []};
     };
 
-    var displayCommentsForCommits = function(permalinkElement, commitsAndComments) {
-        var comments = commitsAndComments.comments,
-            lastCommit = latest(commitsAndComments.commits),
+    var displayCommentsForCommits = function(permalinkElement, data) {
+        var comments = data.comments,
+            lastCommit = latest(data.commits),
             latestCommitUrl = CONFIG.REPO_COMMIT_URL_ROOT +
             lastCommit.sha + '#all_commit_comments',
             wrapper = wrapperTemplate(lastCommit.sha,
@@ -321,11 +383,12 @@ var talaria = (function ($, P) {
                                       comments.length,
                                       (location.pathname === '/' ||
                                        CONFIG.PAGINATION_SCHEME.test(location.pathname))),
-            commentHtml = comments.map(commentTemplate);
+            commentHtml = comments.map(commentTemplate).join(''),
+            article = parentArticle(permalinkElement);
 
-        $(permalinkElement).parents('article').append(wrapper);
-        $('#talaria-comment-list-' + lastCommit.sha).
-            prepend(commentHtml);
+        article.appendChild(wrapper);
+
+        document.getElementById('talaria-comment-list-' + lastCommit.sha).innerHTML = commentHtml;
         addClickHandlers(lastCommit.sha, permalinkElement.href, comments.length > 0);
     };
 
@@ -333,7 +396,7 @@ var talaria = (function ($, P) {
      * Github API interaction - Gist-based
      */
     var retrieveGistBasedComments = function() {
-        return P.resolve($.getJSON(CONFIG.GIST_MAPPINGS)).
+        return getJSON(CONFIG.GIST_MAPPINGS).
             then(function (gistMappings) {
                 return getRelevantMappings(gistMappings);
             }).map(function (mapping) {
@@ -359,7 +422,7 @@ var talaria = (function ($, P) {
     };
 
     var getGistComments = function (gist) {
-        return P.resolve($.getJSON('https://api.github.com/gists/' + gist.id + '/comments')).
+        return getJSON('https://api.github.com/gists/' + gist.id + '/comments').
             then(function (comments) {
                 gist.comments = comments;
                 cacheCommentData(gist.permalink, gist);
@@ -369,16 +432,14 @@ var talaria = (function ($, P) {
 
     var getRelevantMappings = function (gistMappings) {
         var mappings = [],
-            relevant = false,
             gist;
 
         for (var entry in gistMappings) {
             if (gistMappings.hasOwnProperty(entry)) {
                 gist = gistMappings[entry];
-                var permalink = $(CONFIG.PERMALINK_IDENTIFIER +
-                                  '[href="' + gist.permalink + '"]');
-                relevant = permalink.length > 0;
-                if (relevant) {
+                var permalink = document.querySelector(CONFIG.PERMALINK_IDENTIFIER +
+                                                       '[href="' + gist.permalink + '"]');
+                if (permalink !== null) {
                     mappings.push({'gist':gistMappings[entry],
                                    'linkobj': permalink});
                 }
@@ -388,13 +449,19 @@ var talaria = (function ($, P) {
     };
 
     var showGistMappingsError = function () {
-        var wrapper = wrapperTemplate('', '', 0, false);
-        $(CONFIG.PERMALINK_IDENTIFIER).each(function () {
-            $(this).parents('article').append(wrapper);
-        });
-        $('div.talaria-wrapper div.talaria-load-error').text(
-            'Unable to load comments.').removeClass('hide');
-        $('div.talaria-wrapper div.talaria-comment-count').addClass('hide');
+        var wrapper = wrapperTemplate('', '', 0, false),
+            permas = document.querySelectorAll(CONFIG.PERMALINK_IDENTIFIER);
+
+        for (var i = 0; i < permas.length; i++) {
+            permas[i].appendChild(wrapper.cloneNode(true));
+        }
+
+        var errors = document.querySelectorAll('div.talaria-wrapper div.talaria-load-error');
+        for (var j = 0; j < errors.length; j++) {
+            errors[j].innerHTML = 'Unable to load comments.';
+            errors[j].classList.remove('hide');
+        }
+        document.querySelector('div.talaria-wrapper div.talaria-comment-count').classList.add('hide');
     };
 
     var showErrorForGist = function(permalinkElement, error, gist) {
@@ -405,22 +472,21 @@ var talaria = (function ($, P) {
                                       (location.pathname === '/' ||
                                        CONFIG.PAGINATION_SCHEME.test(location.pathname)));
 
-        permalinkElement.parents('article').append(wrapper);
+        parentArticle(permalinkElement).appendChild(wrapper);
+
+        var elem = document.querySelector('#talaria-wrap-' + gist.id + ' div.talaria-load-error');
+        elem.classList.remove('hide');
+        document.querySelector('#talaria-wrap-' + gist.id + ' div.talaria-comment-count').classList.add('hide');
+
         switch (error.status) {
-            case 403:
-                $('#talaria-wrap-' + gist.id + ' div.talaria-load-error').text(
-                    'The Github API rate-limit has been reached. Unable to load comments.').removeClass('hide');
-                $('#talaria-wrap-' + gist.id + ' div.talaria-comment-count').addClass('hide');
-                break;
-            case 404:
-                $('#talaria-wrap-' + gist.id + ' div.talaria-load-error').text(
-                    'Unable to find a matching gist.').removeClass('hide');
-                $('#talaria-wrap-' + gist.id + ' div.talaria-comment-count').addClass('hide');
-                break;
-            default:
-                $('#talaria-wrap-' + gist.id + ' div.talaria-load-error').text(
-                    'An error occurred retrieving comments for this post.').removeClass('hide');
-                $('#talaria-wrap-' + gist.id + ' div.talaria-comment-count').addClass('hide');
+        case 403:
+            elem.innerHTML = 'The Github API rate-limit has been reached. Unable to load comments.';
+            break;
+        case 404:
+            elem.innerHTML = 'Unable to find a matching gist.';
+            break;
+        default:
+            elem.innerHTML = 'An error occurred retrieving comments for this post.';
         }
     };
 
@@ -431,10 +497,10 @@ var talaria = (function ($, P) {
                                       gist.comments.length,
                                       (location.pathname === '/' ||
                                        CONFIG.PAGINATION_SCHEME.test(location.pathname))),
-            commentHtml = gist.comments.map(commentTemplate);
+            commentHtml = gist.comments.map(commentTemplate).join('');
 
-        permalinkElement.parents('article').append(wrapper);
-        $('#talaria-comment-list-' + gist.id).prepend(commentHtml);
+        parentArticle(permalinkElement).appendChild(wrapper);
+        document.getElementById('talaria-comment-list-' + gist.id).innerHTML = commentHtml;
         addClickHandlers(gist.id, gist.permalink, gist.comments.length > 0);
     };
 
@@ -442,7 +508,7 @@ var talaria = (function ($, P) {
      * Configuration and Initialization
      */
     var updateConfig = function(config) {
-        CONFIG = $.extend({}, DEFAULTS, config);
+        CONFIG = extend({}, DEFAULTS, config);
         CONFIG.GISTS_API_ENDPOINT = 'https://api.github.com/users/' +
             CONFIG.GITHUB_USERNAME + '/gists';
         CONFIG.COMMIT_API_ENDPOINT = 'https://api.github.com/repos/' +
@@ -461,12 +527,6 @@ var talaria = (function ($, P) {
             CONFIG.LOCAL_STORAGE_SUPPORTED = true;
         }
 
-        $.ajaxSetup({
-            accepts: {
-                json: 'application/vnd.github.v3.html+json'
-            }
-        });
-
         if (CONFIG.USE_GISTS) {
             return retrieveGistBasedComments();
         } else {
@@ -480,4 +540,4 @@ var talaria = (function ($, P) {
     return {
         init: initialize
     };
-})($, P);
+})(P);

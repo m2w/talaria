@@ -1,3 +1,27 @@
+// extend is taken from http://youmightnotneedjquery.com/#deep_extend
+// with a minor fix, see https://github.com/HubSpot/youmightnotneedjquery/issues/66
+var extend = function(out) {
+    out = out || {};
+
+    for (var i = 1; i < arguments.length; i++) {
+        var obj = arguments[i];
+
+        if (!obj)
+            continue;
+
+        for (var key in obj) {
+            if (obj.hasOwnProperty(key)) {
+                if (typeof obj[key] === 'object')
+                    out[key] = extend(out[key], obj[key]);
+                else
+                    out[key] = obj[key];
+            }
+        }
+    }
+
+    return out;
+};
+
 var expect = chai.expect,
     singleCommentResponse = JSON.stringify(
     [{"id": 1,
@@ -106,7 +130,7 @@ var expect = chai.expect,
             }
         ]
     },
-    commit2 = $.extend(true, {}, commit1),
+    commit2 = extend({}, commit1),
     singleCommitResponse = JSON.stringify([commit1]),
     multipleCommitsResponse = JSON.stringify([commit1, (function update() {
         commit2.sha = 'asdf124';
@@ -172,54 +196,88 @@ describe('talaria with USE_GISTS = true', function () {
         server.restore();
     });
     afterEach(function () {
-        $('div.talaria-wrapper').remove();
+        var w = document.querySelector('div.talaria-wrapper');
+        w.parentNode.removeChild(w);
     });
     it('should display an error when unable to load the gist<=>post mappings',
        function () {
            return talaria.init({USE_GISTS: true, GITHUB_USERNAME: 'm2w',
                          GIST_MAPPINGS: '/missing-mappings.json'}).
                then(function (){
-                   var errorNode = $('div.talaria-wrapper div.talaria-load-error');
-                   expect(errorNode.hasClass('hide')).to.be.false;
-                   expect(errorNode.text()).to.equal('Unable to load comments.');
-                   expect($('div.talaria-wrapper div.talaria-comment-bubble')).to.have.length(0);
+                   var errorNode = document.querySelector('div.talaria-wrapper div.talaria-load-error');
+                   expect(errorNode.classList.contains('hide')).to.be.false;
+                   expect(errorNode.textContent).to.equal('Unable to load comments.');
+
+                   var commentNodes = document.querySelectorAll('div.talaria-wrapper div.talaria-comment-bubble');
+                   expect(commentNodes).to.have.length(0);
                });
        });
     it('should display an error message when unable to locate a gist', function () {
-        $('a.permalink').attr('href','/test/404');
+        document.querySelector('a.permalink').setAttribute('href','/test/404');
         return talaria.init({USE_GISTS: true, GITHUB_USERNAME: 'm2w',
                       GIST_MAPPINGS: '/mappings.json'}).
             then(function () {
-                var errorNode = $('div.talaria-wrapper div.talaria-load-error');
-                expect(errorNode.hasClass('hide')).to.be.false;
-                expect(errorNode.text()).to.equal('Unable to find a matching gist.');
-                expect($('div.talaria-wrapper div.talaria-comment-bubble')).to.have.length(0);
+                var errorNode = document.querySelector('div.talaria-wrapper div.talaria-load-error');
+                expect(errorNode.classList.contains('hide')).to.be.false;
+                expect(errorNode.textContent).to.equal('Unable to find a matching gist.');
+
+                var commentNodes = document.querySelectorAll('div.talaria-wrapper div.talaria-comment-bubble');
+                expect(commentNodes).to.have.length(0);
             });
     });
     it('should display an error message when exceeding GitHub API rate-limit',
        function () {
-           $('a.permalink').attr('href','/test/403');
+           document.querySelector('a.permalink').setAttribute('href','/test/403');
            return talaria.init({USE_GISTS: true, GITHUB_USERNAME: 'm2w',
                          GIST_MAPPINGS: '/mappings.json'}).
                then(function () {
-                   var errorNode = $('div.talaria-wrapper div.talaria-load-error');
-                   expect(errorNode.hasClass('hide')).to.be.false;
-                   expect(errorNode.text()).to.equal('The Github API rate-limit has been reached. Unable to load comments.');
-                   expect($('div.talaria-wrapper div.talaria-comment-bubble')).to.have.length(0);
+                   var errorNode = document.querySelector('div.talaria-wrapper div.talaria-load-error');
+                   expect(errorNode.classList.contains('hide')).to.be.false;
+                   expect(errorNode.textContent).to.equal('The Github API rate-limit has been reached. Unable to load comments.');
+
+                   var commentNodes = document.querySelectorAll('div.talaria-wrapper div.talaria-comment-bubble');
+                   expect(commentNodes).to.have.length(0);
                });
        });
     it('should retrieve and display all comments for a post', function () {
-        $('a.permalink').attr('href','/test/200');
+        document.querySelector('a.permalink').setAttribute('href','/test/200');
         return talaria.init({USE_GISTS: true, GITHUB_USERNAME: 'm2w',
                       GIST_MAPPINGS: '/mappings.json'}).
             then(function () {
-        expect($('div.talaria-wrapper div.talaria-load-error').
-               hasClass('hide')).to.be.true;
-        expect($('div.talaria-wrapper div.talaria-comment-bubble')).
-                    to.have.length(1);
+                var errorNode = document.querySelector('div.talaria-wrapper div.talaria-load-error');
+                expect(errorNode.classList.contains('hide')).to.be.true;
+
+                var commentNodes = document.querySelectorAll('div.talaria-wrapper div.talaria-comment-bubble');
+                expect(commentNodes).to.have.length(1);
             });
     });
-    it('should cache any API interaction results');
+    it('should cache any API interaction results', function () {
+        document.querySelector('a.permalink').setAttribute('href', '/test/200');
+
+        var store = {};
+
+        sinon.stub(sessionStorage, 'getItem', function (key) {
+            return store[key];
+        });
+        sinon.stub(sessionStorage, 'setItem', function (key, value) {
+            return store[key] = value + '';
+        });
+        sinon.stub(sessionStorage, 'removeItem', function (key) {
+            delete store[key];
+            return store;
+        });
+
+        return talaria.init({USE_GISTS: true, GITHUB_USERNAME: 'm2w',
+                             GIST_MAPPINGS: '/mappings.json'}).
+            then(function () {
+                var stored = JSON.parse(store['/test/200']);
+                expect(stored).to.be.an('object');
+                expect(stored.commentData.comments).to.have.length(1);
+                sessionStorage.removeItem.restore();
+                sessionStorage.getItem.restore();
+                sessionStorage.setItem.restore();
+            });
+    });
 });
 describe('talaria with USE_GISTS = false', function () {
     before(function () {
@@ -248,54 +306,87 @@ describe('talaria with USE_GISTS = false', function () {
         server.restore();
     });
     afterEach(function () {
-        $('div.talaria-wrapper').remove();
+        var w = document.querySelector('div.talaria-wrapper');
+        w.parentNode.removeChild(w);
     });
     it('should display an error when no commits can be found for a permalink', function () {
-        $('a.permalink').attr('href','/2014/11/08/nonexistant');
+        document.querySelector('a.permalink').setAttribute('href','/2014/11/08/nonexistant');
         return talaria.init({GITHUB_USERNAME: 'm2w',
                              REPOSITORY_NAME: 'm2w.github.com'}).
             then(function () {
-                var errorNode = $('div.talaria-wrapper div.talaria-load-error');
-                expect(errorNode.hasClass('hide')).to.be.false;
-                expect(errorNode.text()).to.
+                var errorNode = document.querySelector('div.talaria-wrapper div.talaria-load-error');
+                expect(errorNode.classList.contains('hide')).to.be.false;
+                expect(errorNode.textContent).to.
                     equal('Unable to find commits for this post.');
-                expect($('div.talaria-wrapper div.talaria-comment-bubble')).
+
+                var commentNodes = document.querySelectorAll('div.talaria-wrapper div.talaria-comment-bubble');
+                expect(commentNodes).
                     to.have.length(0);
             });
     });
     it('should render the comment for a single commit', function () {
-        $('a.permalink').attr('href','/2014/11/08/test-single');
+        document.querySelector('a.permalink').setAttribute('href','/2014/11/08/test-single');
         return talaria.init({GITHUB_USERNAME: 'm2w',
                              REPOSITORY_NAME: 'm2w.github.com'}).
             then(function (comments) {
-                var errorNode = $('div.talaria-wrapper div.talaria-load-error');
-                expect(errorNode.hasClass('hide')).to.be.true;
-                expect($('div.talaria-wrapper div.talaria-comment-bubble')).
-                    to.have.length(1);
+                var errorNode = document.querySelector('div.talaria-wrapper div.talaria-load-error');
+                expect(errorNode.classList.contains('hide')).to.be.true;
+
+                var commentNodes = document.querySelectorAll('div.talaria-wrapper div.talaria-comment-bubble');
+                expect(commentNodes).to.have.length(1);
             });
     });
     it('should render all comments from multiple commits', function () {
-        $('a.permalink').attr('href','/2014/11/08/test-multiple');
+        document.querySelector('a.permalink').setAttribute('href','/2014/11/08/test-multiple');
         return talaria.init({GITHUB_USERNAME: 'm2w',
                              REPOSITORY_NAME: 'm2w.github.com'}).
             then(function () {
-                var errorNode = $('div.talaria-wrapper div.talaria-load-error');
-                expect(errorNode.hasClass('hide')).to.be.true;
-                expect($('div.talaria-wrapper div.talaria-comment-bubble')).
-                    to.have.length(2);
+                var errorNode = document.querySelector('div.talaria-wrapper div.talaria-load-error');
+                expect(errorNode.classList.contains('hide')).to.be.true;
+
+                var commentNodes = document.querySelectorAll('div.talaria-wrapper div.talaria-comment-bubble');
+                expect(commentNodes).to.have.length(2);
             });
     });
     it('should display an error message when exceeding GitHub API rate-limit',
        function () {
-           $('a.permalink').attr('href','/2014/11/08/ratelimited');
+           document.querySelector('a.permalink').setAttribute('href','/2014/11/08/ratelimited');
            return talaria.init({GITHUB_USERNAME: 'm2w',
                                 REPOSITORY_NAME: 'm2w.github.com'}).
                then(function () {
-                   var errorNode = $('div.talaria-wrapper div.talaria-load-error');
-                   expect(errorNode.hasClass('hide')).to.be.false;
-                   expect(errorNode.text()).to.equal('The Github API rate-limit has been reached. Unable to load comments.');
-                   expect($('div.talaria-wrapper div.talaria-comment-bubble')).to.have.length(0);
+                   var errorNode = document.querySelector('div.talaria-wrapper div.talaria-load-error');
+                   expect(errorNode.classList.contains('hide')).to.be.false;
+                   expect(errorNode.textContent).to.equal('The Github API rate-limit has been reached. Unable to load comments.');
+
+                   var commentNodes = document.querySelectorAll('div.talaria-wrapper div.talaria-comment-bubble');
+                   expect(commentNodes).to.have.length(0);
                });
        });
-    it('should cache any API interaction results');
+    it('should cache any API interaction results', function () {
+        document.querySelector('a.permalink').setAttribute('href','/2014/11/08/test-multiple');
+
+        var store = {};
+
+        sinon.stub(sessionStorage, 'getItem', function (key) {
+            return store[key];
+        });
+        sinon.stub(sessionStorage, 'setItem', function (key, value) {
+            return store[key] = value + '';
+        });
+        sinon.stub(sessionStorage, 'removeItem', function (key) {
+            delete store[key];
+            return store;
+        });
+
+        return talaria.init({GITHUB_USERNAME: 'm2w',
+                             REPOSITORY_NAME: 'm2w.github.com'}).
+            then(function () {
+                var stored = JSON.parse(store['/2014/11/08/test-multiple']);
+                expect(stored).to.be.an('object');
+                expect(stored.commentData.comments).to.have.length(2);
+                sessionStorage.removeItem.restore();
+                sessionStorage.getItem.restore();
+                sessionStorage.setItem.restore();
+            });
+    });
 });

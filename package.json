@@ -1,7 +1,7 @@
 {
   "name": "talaria",
-  "version": "0.4.0",
-  "description": "A commenting system for static content using Github as its backend.",
+  "version": "0.4.2",
+  "description": "A Github API based commenting system.",
   "main": "gulpfile.js",
   "directories": {
     "lib": "lib"

@@ -1,11 +1,13 @@
 = talaria
+:toc:
+:toc-placement!:
 
 talaria is a commenting system for static sites, using Github as
 backend. It currently supports gist- and commit-based commenting.
 
 You can see talaria in action http://blog.tibidat.com[here].
 
-:toc:
+toc::[]
 
 == Overview
 
@@ -13,11 +15,32 @@ talaria identifies content that potentially has comments through a
 distinct permalink. It then uses that information to interact with the
 Github API and retrieve any comments.
 
+talaria currently comes with Gist- and commit-based comments. Gist-based
+comment work roughly as follows:
+
+. retrieve a file that provides a mapping of `permalink => Gist Id`
+. iterate over all permalinks and retrieve the comments for the associated
+  Gist Id
+. render all comments
+. display messages for any errors that might have occurred
+
+For commit-based comments the process is roughly as follows:
+
+. iterate over all permalinks and extrapolate the path to the file that
+  contains the contents the permalink identifies
+. retrieve all commits for said files
+. aggregate all comments for said commits
+. render the comments
+. display error messages if necessary
+
 Users can see all comments for each item directly on your site and
 will get redirected to Github when they click the "Add a comment"
 button.
 
-To this end, the following assumptions are made:
+== Structural assumptions
+
+For talaria to work, it makes a few assumptions about how your content
+is structured:
 
 . commentable content is wrapped in `<article>` tags.
 . each `<article>` contains a distinct permalink that can be used by
@@ -80,15 +103,16 @@ currently supported `CONFIG` properties:
 === Global settings
 
 `PERMALINK_IDENTIFIER`::
-(default `a.permalink`) valid jQuery selector that can be used to
+(default `a.permalink`) valid CSS selector that can be used to
 identify each content source
 `PAGINATION_SCHEME`::
 (default `/\/page\d+\//`) used to automatically expand comments when
 viewing non-paginated content
 `CACHE_TIMEOUT`::
-(default 1hr) determines whether local data is stale or not.
+(default 1hr) sets the period (in ms) after which local content is
+considered stale.
 `USE_GISTS`::
-(default `false`) simple flag to switch between the gist and commit
+(default `false`) flag to switch between the gist and commit
 backend
 
 === Commit-backend specific settings
@@ -104,9 +128,9 @@ matches something along the lines of
 the end) controls how talaria resolves filenames from
 permalinks, you can choose between `pretty`, `date`, `none` or a
 custom regex. These correspond to the Jekyll defaults, if you choose
-to provide your own regex and you are using commit-based comments
-please have a look at `extrapolatePathFromPermalink` to ensure that it
-will work as you expect it to.
+to provide your own regex please have a look at
+`extrapolatePathFromPermalink` to ensure that it will work as you
+expect it to.
 
 === Gist-backend specific settings
 
@@ -142,15 +166,15 @@ complete set of styling directives, so your mileage may vary.
 * Avoid committing non-commentable content along with commentable
   content.
 * The Github API is currently restricted to *60 API calls per hour* for
-  unauthenticated users. This means that your users can retrieve
-  comments for at most 30 entries. This number is lower if you have
-  multiple commits per 'content source file'; it costs 1 additional API
-  request per additional commit (so if you have 3 commits for a the post
-  `/2013/03/22/blog-relaunch`, _talaria_ actually needs a total of 4 API
-  calls to get all comments). _talaria_ tries to use `sessionStorage` to
-  reduce the total number of API calls, but users could potentially
-  still run into `403` errors from throtteling, in which case _talaria_
-  displays a simple error message.
+  unauthenticated users. This means that for commit-based comments your
+  users can retrieve comments for at most 30 entries. This number is
+  lower if you have multiple commits per 'content source file'; it costs
+  1 additional API request per additional commit (so if you have 3
+  commits for a the post `/2013/03/22/blog-relaunch`, _talaria_ actually
+  needs a total of 4 API calls to get all comments). _talaria_ tries to
+  use `sessionStorage` to reduce the total number of API calls, but users
+  could potentially still run into `403` errors from throtteling, in
+  which case _talaria_ displays a simple error message.
 * talaria appends the comments to each `<article>`. This is currently
   not customizable.
 
