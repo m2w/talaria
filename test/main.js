@@ -172,7 +172,7 @@ var expect = chai.expect,
         ]
     );
 
-describe('talaria with USE_GISTS = true', function () {
+describe('talaria.GISTS', function () {
     before(function () {
         server = sinon.fakeServer.create();
         server.autoRespond = true;
@@ -201,8 +201,9 @@ describe('talaria with USE_GISTS = true', function () {
     });
     it('should display an error when unable to load the gist<=>post mappings',
        function () {
-           return talaria.init({USE_GISTS: true, GITHUB_USERNAME: 'm2w',
-                         GIST_MAPPINGS: '/missing-mappings.json'}).
+           return talaria.init({BACKEND: talaria.backend.GISTS,
+                                GITHUB_USERNAME: 'm2w',
+                                GIST_MAPPINGS: '/missing-mappings.json'}).
                then(function (){
                    var errorNode = document.querySelector('div.talaria-wrapper div.talaria-load-error');
                    expect(errorNode.classList.contains('hide')).to.be.false;
@@ -214,8 +215,9 @@ describe('talaria with USE_GISTS = true', function () {
        });
     it('should display an error message when unable to locate a gist', function () {
         document.querySelector('a.permalink').setAttribute('href','/test/404');
-        return talaria.init({USE_GISTS: true, GITHUB_USERNAME: 'm2w',
-                      GIST_MAPPINGS: '/mappings.json'}).
+        return talaria.init({BACKEND: talaria.backend.GISTS,
+                             GITHUB_USERNAME: 'm2w',
+                             GIST_MAPPINGS: '/mappings.json'}).
             then(function () {
                 var errorNode = document.querySelector('div.talaria-wrapper div.talaria-load-error');
                 expect(errorNode.classList.contains('hide')).to.be.false;
@@ -228,8 +230,9 @@ describe('talaria with USE_GISTS = true', function () {
     it('should display an error message when exceeding GitHub API rate-limit',
        function () {
            document.querySelector('a.permalink').setAttribute('href','/test/403');
-           return talaria.init({USE_GISTS: true, GITHUB_USERNAME: 'm2w',
-                         GIST_MAPPINGS: '/mappings.json'}).
+           return talaria.init({BACKEND: talaria.backend.GISTS,
+                                GITHUB_USERNAME: 'm2w',
+                                GIST_MAPPINGS: '/mappings.json'}).
                then(function () {
                    var errorNode = document.querySelector('div.talaria-wrapper div.talaria-load-error');
                    expect(errorNode.classList.contains('hide')).to.be.false;
@@ -241,8 +244,9 @@ describe('talaria with USE_GISTS = true', function () {
        });
     it('should retrieve and display all comments for a post', function () {
         document.querySelector('a.permalink').setAttribute('href','/test/200');
-        return talaria.init({USE_GISTS: true, GITHUB_USERNAME: 'm2w',
-                      GIST_MAPPINGS: '/mappings.json'}).
+        return talaria.init({BACKEND: talaria.backend.GISTS,
+                             GITHUB_USERNAME: 'm2w',
+                             GIST_MAPPINGS: '/mappings.json'}).
             then(function () {
                 var errorNode = document.querySelector('div.talaria-wrapper div.talaria-load-error');
                 expect(errorNode.classList.contains('hide')).to.be.true;
@@ -267,7 +271,7 @@ describe('talaria with USE_GISTS = true', function () {
             return store;
         });
 
-        return talaria.init({USE_GISTS: true, GITHUB_USERNAME: 'm2w',
+        return talaria.init({BACKEND: talaria.backend.GISTS, GITHUB_USERNAME: 'm2w',
                              GIST_MAPPINGS: '/mappings.json'}).
             then(function () {
                 var stored = JSON.parse(store['/test/200']);
@@ -279,7 +283,7 @@ describe('talaria with USE_GISTS = true', function () {
             });
     });
 });
-describe('talaria with USE_GISTS = false', function () {
+describe('talaria.COMMENTS', function () {
     before(function () {
         server = sinon.fakeServer.create();
         server.autoRespond = true;
@@ -389,4 +393,39 @@ describe('talaria with USE_GISTS = false', function () {
                 sessionStorage.setItem.restore();
             });
     });
+});
+describe('talaria.ISSUES', function () {
+    before(function () {
+        server = sinon.fakeServer.create();
+        server.autoRespond = true;
+        server.respondWith(/ratelimited/,
+                           [403, {"X-RateLimit-Remaining": 0},
+                            rateLimitedResponse]);
+        server.respondWith(/nonexistant/,
+                           [200, {},
+                            JSON.stringify([])]);
+        server.respondWith(/2014-11-08-test-single.md/,
+                           [200, {},
+                            singleCommitResponse]);
+        server.respondWith(/2014-11-08-test-multiple.md/,
+                           [200, {},
+                            multipleCommitsResponse]);
+        server.respondWith(/asdf123/,
+                           [200, {},
+                            commitCommentsResponse]);
+        server.respondWith(/asdf124/,
+                           [200, {},
+                            commitCommentsResponse]);
+    });
+    after(function () {
+        server.restore();
+    });
+    afterEach(function () {
+        var w = document.querySelector('div.talaria-wrapper');
+        w.parentNode.removeChild(w);
+    });
+    it('should display an error when no matching issue can be found for a permalink');
+    it('should display an when Ratelimited');
+    it('should display all comments for each post');
+    it('should cache comment data');
 });

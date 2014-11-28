@@ -111,9 +111,10 @@ viewing non-paginated content
 `CACHE_TIMEOUT`::
 (default 1hr) sets the period (in ms) after which local content is
 considered stale.
-`USE_GISTS`::
-(default `false`) flag to switch between the gist and commit
-backend
+`BACKEND`::
+(default `talaria.backend.COMMITS`) controls the backend used by talaria. Choices
+are available as properties on the `talaria.backend` object: `COMMITS`, `GISTS`,
+`ISSUES`
 
 === Commit-backend specific settings
 
