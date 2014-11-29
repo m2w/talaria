@@ -185,7 +185,7 @@ describe('talaria.GISTS', function () {
         server.respondWith(/ratelimited/,
                            [403, {"X-RateLimit-Remaining": 0},
                             rateLimitedResponse]);
-        server.respondWith(/nonexistant/,
+        server.respondWith(/404/,
                            [404, {},
                             notFoundResponse]);
         server.respondWith(/single/,
@@ -398,24 +398,21 @@ describe('talaria.ISSUES', function () {
     before(function () {
         server = sinon.fakeServer.create();
         server.autoRespond = true;
+        server.respondWith("/issue_mappings.json",
+                           [200, {"Content-Type": "application/json"},
+                            issueMappingsResponse]);
         server.respondWith(/ratelimited/,
                            [403, {"X-RateLimit-Remaining": 0},
                             rateLimitedResponse]);
         server.respondWith(/nonexistant/,
                            [200, {},
-                            JSON.stringify([])]);
-        server.respondWith(/2014-11-08-test-single.md/,
+                            notFoundResponse]);
+        server.respondWith(/issueWithSingleComment/,
                            [200, {},
-                            singleCommitResponse]);
-        server.respondWith(/2014-11-08-test-multiple.md/,
+                            singleCommentIssueResponse]);
+        server.respondWith(/issueWithMultipleComments/,
                            [200, {},
-                            multipleCommitsResponse]);
-        server.respondWith(/asdf123/,
-                           [200, {},
-                            commitCommentsResponse]);
-        server.respondWith(/asdf124/,
-                           [200, {},
-                            commitCommentsResponse]);
+                            multiCommentIssueResponse]);
     });
     after(function () {
         server.restore();
@@ -424,8 +421,97 @@ describe('talaria.ISSUES', function () {
         var w = document.querySelector('div.talaria-wrapper');
         w.parentNode.removeChild(w);
     });
-    it('should display an error when no matching issue can be found for a permalink');
-    it('should display an when Ratelimited');
-    it('should display all comments for each post');
-    it('should cache comment data');
+    it('should display an error when no correct issue<=>permalink mappings can be found', function () {
+        document.querySelector('a.permalink').setAttribute('href','/nonexistant/');
+
+        return talaria.init({GITHUB_USERNAME: 'm2w',
+                             BACKEND: talaria.backend.ISSUES,
+                             ISSUE_MAPPINGS: '/invalid_mappings.json',
+                             REPOSITORY_NAME: 'm2w.github.com'}).
+            then(function () {
+                var errorNode = document.querySelector('div.talaria-wrapper div.talaria-load-error');
+                expect(errorNode.classList.contains('hide')).to.be.false;
+                expect(errorNode.textContent).to.equal('Unable to find matching issue for this post.');
+
+                var commentNodes = document.querySelectorAll('div.talaria-wrapper div.talaria-comment-bubble');
+                expect(commentNodes).to.have.length(0);
+            });
+    });
+    it('should display an error when no matching issue can be found for a permalink', function () {
+        document.querySelector('a.permalink').setAttribute('href','/nonexistant/');
+
+        return talaria.init({GITHUB_USERNAME: 'm2w',
+                             BACKEND: talaria.backend.ISSUES,
+                             ISSUE_MAPPINGS: '/issue_mappings.json',
+                             REPOSITORY_NAME: 'm2w.github.com'}).
+            then(function () {
+                var errorNode = document.querySelector('div.talaria-wrapper div.talaria-load-error');
+                expect(errorNode.classList.contains('hide')).to.be.false;
+                expect(errorNode.textContent).to.equal('Unable to find matching issue for this post.');
+
+                var commentNodes = document.querySelectorAll('div.talaria-wrapper div.talaria-comment-bubble');
+                expect(commentNodes).to.have.length(0);
+            });
+    });
+    it('should display an error when Ratelimited', function () {
+        document.querySelector('a.permalink').setAttribute('href','/ratelimited/');
+
+        return talaria.init({GITHUB_USERNAME: 'm2w',
+                             BACKEND: talaria.backend.ISSUES,
+                             ISSUE_MAPPINGS: '/issue_mappings.json',
+                             REPOSITORY_NAME: 'm2w.github.com'}).
+            then(function () {
+                var errorNode = document.querySelector('div.talaria-wrapper div.talaria-load-error');
+                expect(errorNode.classList.contains('hide')).to.be.false;
+                expect(errorNode.textContent).to.equal('The Github API rate-limit has been reached. Unable to load comments.');
+
+                var commentNodes = document.querySelectorAll('div.talaria-wrapper div.talaria-comment-bubble');
+                expect(commentNodes).to.have.length(0);
+            });
+    });
+    it('should display all comments for each post', function () {
+        document.querySelector('a.permalink').setAttribute('href','/issueWithMultipleComments/');
+
+        return talaria.init({GITHUB_USERNAME: 'm2w',
+                             BACKEND: talaria.backend.ISSUES,
+                             ISSUE_MAPPINGS: '/issue_mappings.json',
+                             REPOSITORY_NAME: 'm2w.github.com'}).
+            then(function () {
+                var errorNode = document.querySelector('div.talaria-wrapper div.talaria-load-error');
+                expect(errorNode.classList.contains('hide')).to.be.true;
+
+                var commentNodes = document.querySelectorAll('div.talaria-wrapper div.talaria-comment-bubble');
+                expect(commentNodes).to.have.length(4);
+            });
+    });
+    it('should cache comment data', function () {
+        document.querySelector('a.permalink').setAttribute('href','/issueWithMultipleComments/');
+
+        var store = {};
+
+        sinon.stub(sessionStorage, 'getItem', function (key) {
+            return store[key];
+        });
+        sinon.stub(sessionStorage, 'setItem', function (key, value) {
+            return store[key] = value + '';
+        });
+        sinon.stub(sessionStorage, 'removeItem', function (key) {
+            delete store[key];
+            return store;
+        });
+
+        return talaria.init({GITHUB_USERNAME: 'm2w',
+                             BACKEND: talaria.backend.ISSUES,
+                             ISSUE_MAPPINGS: '/issue_mappings.json',
+                             REPOSITORY_NAME: 'm2w.github.com'}).
+            then(function () {
+                var stored = JSON.parse(store['/issueWithMultipleComments/']);
+                expect(stored).to.be.an('object');
+                expect(stored.commentData.comments).to.have.length(4);
+                sessionStorage.removeItem.restore();
+                sessionStorage.getItem.restore();
+                sessionStorage.setItem.restore();
+            });
+
+    });
 });
