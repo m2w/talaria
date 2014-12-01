@@ -53,9 +53,8 @@ var expect = chai.expect,
          "documentation_url": "https://developer.github.com/v3/#rate-limiting"}),
     simpleMappingsResponse = JSON.stringify(
         {"test1.md": {"permalink": "/test/200", "id": "single"},
-         "test2.md": {"permalink": "/test/404", "id":"nonexistant"},
-         "test3.md": {"permalink": "/test/403", "id":"ratelimited"}}
-
+         "test2.md": {"permalink": "/test/404", "id": "nonexistant"},
+         "test3.md": {"permalink": "/test/403", "id": "ratelimited"}}
     ),
     notFoundResponse = JSON.stringify(
         {"message": "Not Found",
@@ -171,7 +170,11 @@ var expect = chai.expect,
             }
         ]
     ),
-    issueMappingsResponse = JSON.stringify([]),
+    issueMappingsResponse = JSON.stringify(
+        {"test1.md": {"permalink": "/test/200", "id": "multiple"},
+         "test2.md": {"permalink": "/test/404", "id": "nonexistant"},
+         "test3.md": {"permalink": "/test/403", "id": "ratelimited"}}
+    ),
     singleCommentIssueResponse = JSON.stringify(
         [
             {
@@ -495,12 +498,9 @@ describe('talaria.ISSUES', function () {
                            [403, {"X-RateLimit-Remaining": 0},
                             rateLimitedResponse]);
         server.respondWith(/nonexistant/,
-                           [200, {},
+                           [404, {},
                             notFoundResponse]);
-        server.respondWith(/issueWithSingleComment/,
-                           [200, {},
-                            singleCommentIssueResponse]);
-        server.respondWith(/issueWithMultipleComments/,
+        server.respondWith(/multiple/,
                            [200, {},
                             multiCommentIssueResponse]);
     });
@@ -514,7 +514,7 @@ describe('talaria.ISSUES', function () {
         }
     });
     it('should display an error when no correct issue<=>permalink mappings can be found', function () {
-        document.querySelector('a.permalink').setAttribute('href','/nonexistant/');
+        document.querySelector('a.permalink').setAttribute('href', '/test/404');
 
         return talaria.init({GITHUB_USERNAME: 'm2w',
                              BACKEND: talaria.backend.ISSUES,
@@ -523,14 +523,14 @@ describe('talaria.ISSUES', function () {
             then(function () {
                 var errorNode = document.querySelector('div.talaria-wrapper div.talaria-load-error');
                 expect(errorNode.classList.contains('hide')).to.be.false;
-                expect(errorNode.textContent).to.equal('Unable to find matching issue for this post.');
+                expect(errorNode.textContent).to.equal('Unable to load comments.');
 
                 var commentNodes = document.querySelectorAll('div.talaria-wrapper div.talaria-comment-bubble');
                 expect(commentNodes).to.have.length(0);
             });
     });
     it('should display an error when no matching issue can be found for a permalink', function () {
-        document.querySelector('a.permalink').setAttribute('href','/nonexistant/');
+        document.querySelector('a.permalink').setAttribute('href', '/test/404');
 
         return talaria.init({GITHUB_USERNAME: 'm2w',
                              BACKEND: talaria.backend.ISSUES,
@@ -539,14 +539,14 @@ describe('talaria.ISSUES', function () {
             then(function () {
                 var errorNode = document.querySelector('div.talaria-wrapper div.talaria-load-error');
                 expect(errorNode.classList.contains('hide')).to.be.false;
-                expect(errorNode.textContent).to.equal('Unable to find matching issue for this post.');
+                expect(errorNode.textContent).to.equal('Unable to find a matching issue for this content.');
 
                 var commentNodes = document.querySelectorAll('div.talaria-wrapper div.talaria-comment-bubble');
                 expect(commentNodes).to.have.length(0);
             });
     });
     it('should display an error when Ratelimited', function () {
-        document.querySelector('a.permalink').setAttribute('href','/ratelimited/');
+        document.querySelector('a.permalink').setAttribute('href', '/test/403');
 
         return talaria.init({GITHUB_USERNAME: 'm2w',
                              BACKEND: talaria.backend.ISSUES,
@@ -562,7 +562,7 @@ describe('talaria.ISSUES', function () {
             });
     });
     it('should display all comments for each post', function () {
-        document.querySelector('a.permalink').setAttribute('href','/issueWithMultipleComments/');
+        document.querySelector('a.permalink').setAttribute('href', '/test/200');
 
         return talaria.init({GITHUB_USERNAME: 'm2w',
                              BACKEND: talaria.backend.ISSUES,
@@ -573,11 +573,11 @@ describe('talaria.ISSUES', function () {
                 expect(errorNode.classList.contains('hide')).to.be.true;
 
                 var commentNodes = document.querySelectorAll('div.talaria-wrapper div.talaria-comment-bubble');
-                expect(commentNodes).to.have.length(4);
+                expect(commentNodes).to.have.length(2);
             });
     });
     it('should cache comment data', function () {
-        document.querySelector('a.permalink').setAttribute('href','/issueWithMultipleComments/');
+        document.querySelector('a.permalink').setAttribute('href', '/test/200');
 
         var store = {};
 
@@ -597,9 +597,9 @@ describe('talaria.ISSUES', function () {
                              ISSUE_MAPPINGS: '/issue_mappings.json',
                              REPOSITORY_NAME: 'm2w.github.com'}).
             then(function () {
-                var stored = JSON.parse(store['/issueWithMultipleComments/']);
+                var stored = JSON.parse(store['/test/200']);
                 expect(stored).to.be.an('object');
-                expect(stored.commentData.comments).to.have.length(4);
+                expect(stored.commentData.comments).to.have.length(2);
                 sessionStorage.removeItem.restore();
                 sessionStorage.getItem.restore();
                 sessionStorage.setItem.restore();
