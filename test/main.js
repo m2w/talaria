@@ -291,6 +291,7 @@ describe('talaria.GISTS', function () {
     afterEach(function () {
         var w = document.querySelector('div.talaria-wrapper');
         w.parentNode.removeChild(w);
+        sessionStorage.clear();
     });
     it('should display an error when unable to load the gist<=>post mappings',
        function () {
@@ -405,6 +406,7 @@ describe('talaria.COMMENTS', function () {
     afterEach(function () {
         var w = document.querySelector('div.talaria-wrapper');
         w.parentNode.removeChild(w);
+        sessionStorage.clear();
     });
     it('should display an error when no commits can be found for a permalink', function () {
         document.querySelector('a.permalink').setAttribute('href','/2014/11/08/nonexistant');
@@ -512,6 +514,7 @@ describe('talaria.ISSUES', function () {
         if (w !== null) {
             w.parentNode.removeChild(w);
         }
+        sessionStorage.clear();
     });
     it('should display an error when no correct issue<=>permalink mappings can be found', function () {
         document.querySelector('a.permalink').setAttribute('href', '/test/404');
