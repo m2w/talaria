@@ -297,7 +297,7 @@ describe('talaria.GISTS', function () {
        function () {
            return talaria.init({BACKEND: talaria.backend.GISTS,
                                 GITHUB_USERNAME: 'm2w',
-                                GIST_MAPPINGS: '/missing-mappings.json'}).
+                                MAPPINGS: '/missing-mappings.json'}).
                then(function (){
                    var errorNode = document.querySelector('div.talaria-wrapper div.talaria-load-error');
                    expect(errorNode.classList.contains('hide')).to.be.false;
@@ -311,7 +311,7 @@ describe('talaria.GISTS', function () {
         document.querySelector('a.permalink').setAttribute('href','/test/404');
         return talaria.init({BACKEND: talaria.backend.GISTS,
                              GITHUB_USERNAME: 'm2w',
-                             GIST_MAPPINGS: '/mappings.json'}).
+                             MAPPINGS: '/mappings.json'}).
             then(function () {
                 var errorNode = document.querySelector('div.talaria-wrapper div.talaria-load-error');
                 expect(errorNode.classList.contains('hide')).to.be.false;
@@ -326,7 +326,7 @@ describe('talaria.GISTS', function () {
            document.querySelector('a.permalink').setAttribute('href','/test/403');
            return talaria.init({BACKEND: talaria.backend.GISTS,
                                 GITHUB_USERNAME: 'm2w',
-                                GIST_MAPPINGS: '/mappings.json'}).
+                                MAPPINGS: '/mappings.json'}).
                then(function () {
                    var errorNode = document.querySelector('div.talaria-wrapper div.talaria-load-error');
                    expect(errorNode.classList.contains('hide')).to.be.false;
@@ -340,7 +340,7 @@ describe('talaria.GISTS', function () {
         document.querySelector('a.permalink').setAttribute('href','/test/200');
         return talaria.init({BACKEND: talaria.backend.GISTS,
                              GITHUB_USERNAME: 'm2w',
-                             GIST_MAPPINGS: '/mappings.json'}).
+                             MAPPINGS: '/mappings.json'}).
             then(function () {
                 var errorNode = document.querySelector('div.talaria-wrapper div.talaria-load-error');
                 expect(errorNode.classList.contains('hide')).to.be.true;
@@ -366,7 +366,7 @@ describe('talaria.GISTS', function () {
         });
 
         return talaria.init({BACKEND: talaria.backend.GISTS, GITHUB_USERNAME: 'm2w',
-                             GIST_MAPPINGS: '/mappings.json'}).
+                             MAPPINGS: '/mappings.json'}).
             then(function () {
                 var stored = JSON.parse(store['/test/200']);
                 expect(stored).to.be.an('object');
@@ -521,7 +521,7 @@ describe('talaria.ISSUES', function () {
 
         return talaria.init({GITHUB_USERNAME: 'm2w',
                              BACKEND: talaria.backend.ISSUES,
-                             ISSUE_MAPPINGS: '/invalid_mappings.json',
+                             MAPPINGS: '/invalid_mappings.json',
                              REPOSITORY_NAME: 'm2w.github.com'}).
             then(function () {
                 var errorNode = document.querySelector('div.talaria-wrapper div.talaria-load-error');
@@ -537,7 +537,7 @@ describe('talaria.ISSUES', function () {
 
         return talaria.init({GITHUB_USERNAME: 'm2w',
                              BACKEND: talaria.backend.ISSUES,
-                             ISSUE_MAPPINGS: '/issue_mappings.json',
+                             MAPPINGS: '/issue_mappings.json',
                              REPOSITORY_NAME: 'm2w.github.com'}).
             then(function () {
                 var errorNode = document.querySelector('div.talaria-wrapper div.talaria-load-error');
@@ -553,7 +553,7 @@ describe('talaria.ISSUES', function () {
 
         return talaria.init({GITHUB_USERNAME: 'm2w',
                              BACKEND: talaria.backend.ISSUES,
-                             ISSUE_MAPPINGS: '/issue_mappings.json',
+                             MAPPINGS: '/issue_mappings.json',
                              REPOSITORY_NAME: 'm2w.github.com'}).
             then(function () {
                 var errorNode = document.querySelector('div.talaria-wrapper div.talaria-load-error');
@@ -569,7 +569,7 @@ describe('talaria.ISSUES', function () {
 
         return talaria.init({GITHUB_USERNAME: 'm2w',
                              BACKEND: talaria.backend.ISSUES,
-                             ISSUE_MAPPINGS: '/issue_mappings.json',
+                             MAPPINGS: '/issue_mappings.json',
                              REPOSITORY_NAME: 'm2w.github.com'}).
             then(function () {
                 var errorNode = document.querySelector('div.talaria-wrapper div.talaria-load-error');
@@ -597,7 +597,7 @@ describe('talaria.ISSUES', function () {
 
         return talaria.init({GITHUB_USERNAME: 'm2w',
                              BACKEND: talaria.backend.ISSUES,
-                             ISSUE_MAPPINGS: '/issue_mappings.json',
+                             MAPPINGS: '/issue_mappings.json',
                              REPOSITORY_NAME: 'm2w.github.com'}).
             then(function () {
                 var stored = JSON.parse(store['/test/200']);
