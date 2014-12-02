@@ -3,7 +3,7 @@
 :toc-placement!:
 
 talaria is a commenting system for static sites, using Github as
-backend. It currently supports gist- and commit-based commenting.
+backend. It supports Gist-, Issue- and commit-based commenting.
 
 You can see talaria in action http://blog.tibidat.com[here].
 
@@ -15,12 +15,12 @@ talaria identifies content that potentially has comments through a
 distinct permalink. It then uses that information to interact with the
 Github API and retrieve any comments.
 
-talaria currently comes with Gist- and commit-based comments. Gist-based
-comment work roughly as follows:
+talaria currently comes with Issue-, Gist- and commit-based comments.
+Gist and Issue-based comments work roughly as follows:
 
-. retrieve a file that provides a mapping of `permalink => Gist Id`
+. retrieve a file that provides a mapping of `permalink => Gist|Issue Id`
 . iterate over all permalinks and retrieve the comments for the associated
-  Gist Id
+  Gist|Issue Id
 . render all comments
 . display messages for any errors that might have occurred
 
@@ -133,18 +133,18 @@ to provide your own regex please have a look at
 `extrapolatePathFromPermalink` to ensure that it will work as you
 expect it to.
 
-=== Gist-backend specific settings
+=== Gist & Issue-backend specific settings
 
-`GIST_MAPPINGS`::
+`MAPPINGS`::
 URL that points to a JSON file that provides a mapping between
-permalinks and Gist IDs. It must follow the following structure:
+permalinks and Gist|Issue IDs. It must follow the following structure:
 ----
-{:FILENAME: {"id": :GIST_ID, "permalink": :permalink},
- :FILENAME2: {"id": :GIST_ID, "permalink": :permalink}}
+{:FILENAME: {"id": :GIST|ISSUE_ID, "permalink": :permalink},
+ :FILENAME2: {"id": :GIST|ISSUE_ID, "permalink": :permalink}}
 ----
 Expect this format to change. Take a look at this
 https://github.com/m2w/m2w.github.com/blob/master/Rakefile#L152[Rakefile]
-to see how you could go about generating such a mapping.
+to see how you could go about generating such mappings.
 
 == Customizing talaria's look'n'feel
 
