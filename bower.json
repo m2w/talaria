@@ -12,7 +12,7 @@
   "description": "A Github API based commenting system.",
   "license": "MIT",
   "dependencies": {
-    "bluebird": "~2.3.11"
+    "bluebird": "~2.7.0"
   },
   "ignore": [
     "**/.*",
