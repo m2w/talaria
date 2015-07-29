@@ -2,6 +2,8 @@
 :toc:
 :toc-placement!:
 
+Status: I'm in the proces of rewriting this in ES6 with improved tooling and testing. Should be done soon.
+
 talaria is a commenting system for static sites, using Github as
 backend. It supports Gist-, Issue- and commit-based commenting.
 
