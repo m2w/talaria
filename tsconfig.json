@@ -1,0 +1,16 @@
+{
+    "compilerOptions": {
+        "lib": [
+            "es5",
+            "dom",
+            "es2015.promise"
+        ],
+        "alwaysStrict": true,
+        "target": "es2015",
+        "sourceMap": true,
+        "outDir": "dist"
+    },
+    "files": [
+        "lib/talaria.ts"
+    ]
+}
