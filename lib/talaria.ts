@@ -1,23 +1,49 @@
+/**
+ * talaria is a library to provide commenting support for static content,
+ * using Github as its persistance layer.
+ */
+
 enum TalariaMethod {
     Gists,
-    Issues,
+    Issues
 }
 
 type MappingUrl = string;
-interface Mapping {
+
+interface IMapping {
     id: string;
 }
-interface Mappings {
-    [permalink: string]: Mapping;
+
+interface IMappings {
+    [permalink: string]: IMapping;
 }
+
 type CSSSelector = string;
 
-interface MatchedMapping {
-    mapping: Mapping;
+interface IMatchedMapping {
+    mapping: IMapping;
     obj: Element;
 }
 
-interface Configuration {
+interface IUser {
+    html_url: string;
+    login: string;
+    avatar_url: string;
+}
+
+interface IComment {
+    id: string;
+    body: string;
+    body_html: string;
+    updated_at: string;
+    user: IUser;
+}
+
+type Comments = IComment[];
+
+type ServerResponse = IMappings | IComment;
+
+interface IConfiguration {
     method: TalariaMethod;
     github_repository?: string;
     github_username?: string;
@@ -27,8 +53,15 @@ interface Configuration {
     commentsVisible?: boolean;
 }
 
+/**
+ * A simple wrapper around `Error` to indicate configuration errors.
+ */
 class ConfigError extends Error { }
 
+/**
+ * Talaria contains all state necessary to retrieve comments for
+ * content on the current page.
+ */
 class Talaria {
     private static month: { [m: number]: string } = {
         0: 'Jan',
@@ -42,28 +75,36 @@ class Talaria {
         8: 'Sep',
         9: 'Oct',
         10: 'Nov',
-        11: 'Dec',
+        11: 'Dec'
     };
-    private static errorHtml = `<div class="talaria">
+    // tslint:disable-next-line:no-multiline-string
+    private static errorHtml: string = `<div class="talaria">
             <div class="talaria-error">
                 Unable to retrieve comments for this post.
             </div>
         </div>`;
-    private config: Configuration;
+    private config: IConfiguration;
     private getAPIendpoint: (id: string) => string;
     private objHtmlUrl: (id: string) => string;
 
-    constructor(config: Configuration) {
-        if (!config.permalinkSelector) {
+    constructor(config: IConfiguration) {
+        if (config === undefined || config.method === undefined || config.mappingUrl === undefined) {
+            throw new ConfigError('Invalid configuration, see the docs for required configuration attributes');
+        }
+
+        if (config.permalinkSelector === undefined) {
             config.permalinkSelector = '.permalink';
         }
-        if (config.method === TalariaMethod.Issues && !(config.github_username && config.github_repository)) {
-            throw new ConfigError('Configuration Error: When using Issue-based comments, ' +
+        if (config.method === TalariaMethod.Issues &&
+            config.github_username === undefined &&
+            config.github_repository === undefined) {
+            throw new ConfigError('When using Issue-based comments, ' +
                 'github_username and github_repository are required config values.');
         }
 
-        if (config.method === TalariaMethod.Gists && !config.github_username) {
-            throw new ConfigError('Configuration Error: When using Gists-based comments, ' +
+        if (config.method === TalariaMethod.Gists &&
+            config.github_username === undefined) {
+            throw new ConfigError('When using Gists-based comments, ' +
                 'your github_username is a required config value.');
         }
 
@@ -72,67 +113,70 @@ class Talaria {
         this.objHtmlUrl = this.urlForObject();
     }
 
-    public run() {
+    public run(): void {
         // get all nodes that match our identifier of a post
-        const objects = document.querySelectorAll(this.config.permalinkSelector);
+        const objects: NodeListOf<Element> = document.querySelectorAll(this.config.permalinkSelector);
 
         if (objects.length > 0) {
-            // 1. get mappings
-            this.get(this.config.mappingUrl, 'application/json')
-                .then((mappings: Mappings) => {
+            // get mappings
+            this.fetch(this.config.mappingUrl, 'application/json')
+                .then((mappings: IMappings) => {
                     // matches are objects we need to retrieve comments for
-                    const matches: MatchedMapping[] = [];
+                    const matches: IMatchedMapping[] = [];
 
                     // find objects we have mappings for
-                    for (let i = 0; i < objects.length; i++) {
-                        const permalink = objects[i].getAttribute('href');
+                    for (let i: number = 0; i < objects.length; i += 1) {
+                        const permalink: string = objects[i].getAttribute('href');
                         // if object[href] in mappings, return it
                         if (mappings.hasOwnProperty(permalink)) {
                             matches.push({
                                 mapping: mappings[permalink],
-                                obj: objects[i],
+                                obj: objects[i]
                             });
                         }
                     }
 
                     // get comments for all matches
-                    Promise.all(matches.map((element) => {
-                        return this.get(this.getAPIendpoint(element.mapping.id),
-                            'application/vnd.github.v3.html+json')
-                            .then((comments: [{}]) => {
-                                // mount comments into DOM
-                                const commentHtml = document.createElement('div');
-                                commentHtml.innerHTML = this.commentsWrapper(element.mapping.id, comments);
+                    Promise.all(matches.map((element: IMatchedMapping): Promise<void> => {
+                        return this.fetch(
+                            this.getAPIendpoint(element.mapping.id),
+                            'application/vnd.github.v3.html+json'
+                        ).then((comments: IComment[]) => {
+                            // mount comments into DOM
+                            const commentHtml: HTMLDivElement = document.createElement('div');
+                            // tslint:disable-next-line:no-inner-html
+                            commentHtml.innerHTML = this.commentsWrapper(element.mapping.id, comments);
 
-                                // TODO: add configuration option for a selector where the comments are inserted at
-                                element.obj.parentElement.appendChild(commentHtml);
-                            }).catch((error) => {
-                                if (!this.config.ignoreErrors) {
-                                    const node = document.createElement('div');
-                                    node.innerHTML = Talaria.errorHtml;
-                                    element.obj.parentElement.appendChild(node);
-                                }
-                            });
+                            // TODO: add configuration option for a selector where the comments are inserted at
+                            element.obj.parentElement.appendChild(commentHtml);
+                        }).catch((error: XMLHttpRequest) => {
+                            if (!this.config.ignoreErrors) {
+                                const node: HTMLDivElement = document.createElement('div');
+                                // tslint:disable-next-line:no-inner-html
+                                node.innerHTML = Talaria.errorHtml;
+                                element.obj.parentElement.appendChild(node);
+                            }
+                        });
                     })).then(() => {
-                        const counters = document.querySelectorAll('.talaria-counter');
-                        for (let i = 0; i < counters.length; i++) {
-                            counters[i].addEventListener('click', (e) => {
-                                const t = e.target as Element;
+                        const counters: NodeListOf<Element> = document.querySelectorAll('.talaria-counter');
+                        for (let i: number = 0; i < counters.length; i += 1) {
+                            counters[i].addEventListener('click', (e: Event) => {
+                                const t: Element = <Element>e.target;
                                 this.showComments(t.getAttribute('data-talaria-id'));
                                 e.preventDefault();
                             });
                         }
                     });
                 })
-                .catch((error) => {
-                    throw new Error('Configuration Error: Unable to load mappings file');
+                .catch((error: XMLHttpRequest) => {
+                    throw new ConfigError('Configuration Error: Unable to load mappings file');
                 });
         }
     }
 
-    private showComments(objId: string) {
-        const id = `talaria-comments-${objId}`;
-        const comments = document.getElementById(id);
+    private showComments(objId: string): void {
+        const id: string = `talaria-comments-${objId}`;
+        const comments: HTMLElement = document.getElementById(id);
         comments.classList.remove('talaria-hide');
         // TODO: add CSS animation
     }
@@ -140,26 +184,32 @@ class Talaria {
     private urlForObject(): (id: string) => string {
         switch (this.config.method) {
             case TalariaMethod.Gists:
-                return (id: string) => `https://gist.github.com/${this.config.github_username}/${id}`;
+                return (id: string): string => `https://gist.github.com/${this.config.github_username}/${id}`;
             case TalariaMethod.Issues:
-                const root =
+                const root: string =
                     `https://github.com/${this.config.github_username}/${this.config.github_repository}/issues`;
-                return (id: string) => `${root}/${id}`;
+
+                return (id: string): string => `${root}/${id}`;
+            default:
+                throw new ConfigError(`ConfigurationError: Unknown TalariaMethod: ${this.config.method}`);
         }
     }
 
     private commentsUrl(): (id: string) => string {
         switch (this.config.method) {
             case TalariaMethod.Gists:
-                return (id: string) => `https://api.github.com/gists/${id}/comments`;
+                return (id: string): string => `https://api.github.com/gists/${id}/comments`;
             case TalariaMethod.Issues:
-                const root =
+                const root: string =
                     `https://api.github.com/repos/${this.config.github_username}/${this.config.github_repository}/issues`;
-                return (id: string) => `${root}/${id}/comments`;
+
+                return (id: string): string => `${root}/${id}/comments`;
+            default:
+                throw new ConfigError(`ConfigurationError: Unknown TalariaMethod: ${this.config.method}`);
         }
     }
 
-    private commentMarkup(objUrl: string, comment): string {
+    private commentMarkup(objUrl: string, comment: IComment): string {
         let commentUrl: string;
         switch (this.config.method) {
             case TalariaMethod.Gists:
@@ -168,7 +218,14 @@ class Talaria {
             case TalariaMethod.Issues:
                 commentUrl = `${objUrl}#issuecomment-${comment.id}`;
                 break;
+            default:
+                throw new ConfigError(`ConfigurationError: Unknown TalariaMethod: ${this.config.method}`);
         }
+        let body: string = comment.body_html;
+        if (body === undefined) {
+            body = comment.body;
+        }
+
         return `<div id="${comment.id}" class="talaria-comment-wrapper">
                     <a class="talaria-avatar-wrapper talaria-link" href="${comment.user.html_url}">
                         <img class="talaria-avatar" height="44" width="44" src="${comment.user.avatar_url}" />
@@ -185,21 +242,22 @@ class Talaria {
                                href="${commentUrl}"
                                target="_blank">${this.formatDate(new Date(comment.updated_at))}</a>
                         </div>
-                        <div class="talaria-comment-body">${(comment.body_html || comment.body)}</div>
+                        <div class="talaria-comment-body">${body}</div>
                     </div>
                 </div>`;
     }
-    private commentsWrapper(objId: string, comments: [{}]): string {
-        const objUrl = this.objHtmlUrl(objId);
-        const html = `<div class="talaria-comment-count">
+    private commentsWrapper(objId: string, comments: IComment[]): string {
+        const objUrl: string = this.objHtmlUrl(objId);
+        const html: string = `<div class="talaria-comment-count">
                 <a class="talaria-counter"
                    data-talaria-id="${objId}"
                    href="#">${comments.length} comment${comments.length === 1 ? '' : 's'}</a>
             </div>
             <div class="${this.config.commentsVisible ? '' : 'talaria-hide'}"
                  id="talaria-comments-${objId}">
-                ${comments.map((c) => this.commentMarkup(objUrl, c)).join('')}
+                ${comments.map((c: IComment) => this.commentMarkup(objUrl, c)).join('')}
             </div>`;
+
         // FIXME: add special style for empty comments array
         return `<div class="talaria">
                     <div class="talaria-comment-list-wrapper">
@@ -211,27 +269,27 @@ class Talaria {
                 </div>`;
     }
 
-    private get(url: string, accept: string): Promise<{}> {
-        return new Promise((resolve, reject) => {
-            const cache = sessionStorage.getItem(url);
-            if (cache) {
-                resolve(JSON.parse(cache));
-            }
-            else {
-                const req = new XMLHttpRequest();
+    private async fetch(url: string, accept: string): Promise<{}> {
+        return new Promise((resolve: (s: ServerResponse) => void, reject: (req: XMLHttpRequest) => void): void => {
+            const cache: string = sessionStorage.getItem(url);
+            if (cache !== null) {
+                const resp: ServerResponse = JSON.parse(cache);
+                resolve(resp);
+            } else {
+                const req: XMLHttpRequest = new XMLHttpRequest();
                 req.open('GET', url, true);
                 req.setRequestHeader('Accept', accept);
-                req.onload = () => {
+                req.onload = (): void => {
                     if (req.status >= 200 && req.status < 400) {
-                        const response = req.responseText;
+                        const response: string = req.responseText;
                         sessionStorage.setItem(url, response);
-                        resolve(JSON.parse(response));
-                    }
-                    else {
+                        const resp: ServerResponse = JSON.parse(response);
+                        resolve(resp);
+                    } else {
                         reject(req);
                     }
                 };
-                req.onerror = () => {
+                req.onerror = (): void => {
                     reject(req);
                 };
                 req.send();
@@ -240,14 +298,15 @@ class Talaria {
     }
 
     private formatDate(date: Date): string {
-        const now = new Date();
-        const year = date.getFullYear();
-        const day = date.getDate();
-        const m = date.getMonth();
+        const now: Date = new Date();
+        const year: number = date.getFullYear();
+        const day: number = date.getDate();
+        const m: number = date.getMonth();
 
         if (year === now.getFullYear()) {
             return `on ${Talaria.month[m]} ${day}`;
         }
+
         return `on ${Talaria.month[m]} ${day}, ${year}`;
     }
 }

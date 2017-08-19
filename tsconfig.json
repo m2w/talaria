@@ -5,6 +5,7 @@
             "dom",
             "es2015.promise"
         ],
+        "declaration": true,
         "alwaysStrict": true,
         "target": "es2015",
         "sourceMap": true,
