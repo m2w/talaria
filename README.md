@@ -90,8 +90,6 @@ To get started hacking on talaria:
 2. Run `yarn install` inside the repo (yarn is an alternative to npm)
 3. See `yarn run` for a list of commands - all of talaria's build steps are `package.json` `scripts`
 
-TODO: test suite
-
 ## Trivia
 
-talaria are the [http://en.wikipedia.org/wiki/Talaria](winged sandals) worn by Hermes in Greek mythology.
+talaria are the [winged sandals](http://en.wikipedia.org/wiki/Talaria) worn by Hermes in Greek mythology.
