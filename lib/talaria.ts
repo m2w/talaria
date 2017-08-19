@@ -3,12 +3,13 @@
  * using Github as its persistance layer.
  */
 
-enum TalariaMethod {
+export enum Backend {
     Gists,
     Issues
 }
 
-type MappingUrl = string;
+export type MappingUrl = string;
+export type CSSSelector = string;
 
 interface IMapping {
     id: string;
@@ -17,8 +18,6 @@ interface IMapping {
 interface IMappings {
     [permalink: string]: IMapping;
 }
-
-type CSSSelector = string;
 
 interface IMatchedMapping {
     mapping: IMapping;
@@ -41,10 +40,10 @@ interface IComment {
 
 type Comments = IComment[];
 
-type ServerResponse = IMappings | IComment;
+type ServerResponse = IMappings | Comments;
 
-interface IConfiguration {
-    method: TalariaMethod;
+export interface IConfiguration {
+    backend: Backend;
     github_repository?: string;
     github_username?: string;
     mappingUrl: MappingUrl;
@@ -56,13 +55,13 @@ interface IConfiguration {
 /**
  * A simple wrapper around `Error` to indicate configuration errors.
  */
-class ConfigError extends Error { }
+export class ConfigError extends Error { }
 
 /**
  * Talaria contains all state necessary to retrieve comments for
  * content on the current page.
  */
-class Talaria {
+export class Talaria {
     private static month: { [m: number]: string } = {
         0: 'Jan',
         1: 'Feb',
@@ -88,21 +87,21 @@ class Talaria {
     private objHtmlUrl: (id: string) => string;
 
     constructor(config: IConfiguration) {
-        if (config === undefined || config.method === undefined || config.mappingUrl === undefined) {
+        if (config === undefined || config.backend === undefined || config.mappingUrl === undefined) {
             throw new ConfigError('Invalid configuration, see the docs for required configuration attributes');
         }
 
         if (config.permalinkSelector === undefined) {
             config.permalinkSelector = '.permalink';
         }
-        if (config.method === TalariaMethod.Issues &&
+        if (config.backend === Backend.Issues &&
             config.github_username === undefined &&
             config.github_repository === undefined) {
             throw new ConfigError('When using Issue-based comments, ' +
                 'github_username and github_repository are required config values.');
         }
 
-        if (config.method === TalariaMethod.Gists &&
+        if (config.backend === Backend.Gists &&
             config.github_username === undefined) {
             throw new ConfigError('When using Gists-based comments, ' +
                 'your github_username is a required config value.');
@@ -182,44 +181,44 @@ class Talaria {
     }
 
     private urlForObject(): (id: string) => string {
-        switch (this.config.method) {
-            case TalariaMethod.Gists:
+        switch (this.config.backend) {
+            case Backend.Gists:
                 return (id: string): string => `https://gist.github.com/${this.config.github_username}/${id}`;
-            case TalariaMethod.Issues:
+            case Backend.Issues:
                 const root: string =
                     `https://github.com/${this.config.github_username}/${this.config.github_repository}/issues`;
 
                 return (id: string): string => `${root}/${id}`;
             default:
-                throw new ConfigError(`ConfigurationError: Unknown TalariaMethod: ${this.config.method}`);
+                throw new ConfigError(`ConfigurationError: Unknown TalariaMethod: ${this.config.backend}`);
         }
     }
 
     private commentsUrl(): (id: string) => string {
-        switch (this.config.method) {
-            case TalariaMethod.Gists:
+        switch (this.config.backend) {
+            case Backend.Gists:
                 return (id: string): string => `https://api.github.com/gists/${id}/comments`;
-            case TalariaMethod.Issues:
+            case Backend.Issues:
                 const root: string =
                     `https://api.github.com/repos/${this.config.github_username}/${this.config.github_repository}/issues`;
 
                 return (id: string): string => `${root}/${id}/comments`;
             default:
-                throw new ConfigError(`ConfigurationError: Unknown TalariaMethod: ${this.config.method}`);
+                throw new ConfigError(`ConfigurationError: Unknown TalariaMethod: ${this.config.backend}`);
         }
     }
 
     private commentMarkup(objUrl: string, comment: IComment): string {
         let commentUrl: string;
-        switch (this.config.method) {
-            case TalariaMethod.Gists:
+        switch (this.config.backend) {
+            case Backend.Gists:
                 commentUrl = `${objUrl}#gistcomment-${comment.id}`;
                 break;
-            case TalariaMethod.Issues:
+            case Backend.Issues:
                 commentUrl = `${objUrl}#issuecomment-${comment.id}`;
                 break;
             default:
-                throw new ConfigError(`ConfigurationError: Unknown TalariaMethod: ${this.config.method}`);
+                throw new ConfigError(`ConfigurationError: Unknown TalariaMethod: ${this.config.backend}`);
         }
         let body: string = comment.body_html;
         if (body === undefined) {

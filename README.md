@@ -40,13 +40,13 @@ Additionally, talaria is currently hardcoded to attach the comments as the *last
 ### Initializing talaria
 
 Start by including `<script src="dist/talaria.js"></script>` somewhere on you page (preferably towards then end of `<body>`).
-You now have access to the global `Talaria` and `talaria` variables. To initialize talaria, add a second `<script>` below the first one:
+You now have access to the global `talaria` variable. To initialize talaria, add a second `<script>` below the first one:
 
 ```html
 <script src="<path-to-talaria>/dist/talaria.js"></script>
 <script>
-  var t = new Talaria({
-      method: TalariaMethod.Gists,
+  var t = new talaria.Talaria({
+      backend: talaria.Backend.Gists,
       mappingUrl: 'mappings.json',
       github_username: 'm2w',
       github_repository: 'talaria',
@@ -60,7 +60,7 @@ You now have access to the global `Talaria` and `talaria` variables. To initiali
 
 Most of talaria's functionality can be customized through the configuration object passed to the `Talaria` constructor. Available configuration options are:
 
-- `method` [`TalariaMethod`] *required*, the method determines where you intend to host comments for your content: as comments on github issues or as comments on gists. The options are respectively `TalariaMethod.Issues` and `TalariaMethod.Gists`.
+- `backend` [`Backend`] *required*, the backend determines where you intend to host comments for your content: as comments on github issues or as comments on gists. The options are respectively `Backend.Issues` and `Backend.Gists`.
 - `mappingUrl` [`string`] *required*, a URL pointing to a JSON object containing a mapping of `content-permalink -> github_id`. The `content-permalink` is used by talaria to associate content with its comments and the `github_id` is either the id of a gist or of an issue.
 - `github_username` [`string`] *required*, is your username on github. It is used to construct the URLs back to your gists/issues and to build the github API URLs when using issue-based comments.
 - `github_repository` [`string`], is required when using issue-based comments, as it is necessary to build URLs for the github API.

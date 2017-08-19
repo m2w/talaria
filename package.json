@@ -3,26 +3,31 @@
   "version": "0.5.0",
   "description": "A commenting system for static sites - powered by the Github API",
   "scripts": {
-    "compile": "tsc -p .",
-    "css-prefix": "postcss lib/*.css -c . -u autoprefixer -d dist/ --no-map",
-    "css-min": "postcss lib/*.css -c . -x '.min.css' -d dist/",
-    "css-pretty": "perfectionist lib/talaria.css lib/talaria.css",
+    "build:browser": "browserify index.js -o dist/talaria.browser.js",
+    "build:compile": "tsc -p .",
+    "build:styles": "yarn css:prefix && yarn css:min && yarn css:pretty",
+    "build": "yarn build:compile && yarn build:styles && yarn build:browser",
+    "css:min": "postcss lib/*.css -c . -x '.min.css' -d dist/",
+    "css:prefix": "postcss lib/*.css -c . -u autoprefixer -d dist/ --no-map",
+    "css:pretty": "perfectionist lib/talaria.css lib/talaria.css",
     "lint": "tslint --type-check --project . lib/*.ts",
-    "test": "nyc mocha"
+    "test": "tsc -p tests/ && yarn test:run",
+    "test:run": "nyc --reporter=text ava tests/*.js"
   },
   "directories": {
     "lib": "lib"
   },
-  "dependencies": {
-    "nyc": "^11.1.0",
-    "tslint-microsoft-contrib": "^5.0.1"
-  },
+  "dependencies": {},
   "devDependencies": {
     "autoprefixer": "^7.1.2",
+    "ava": "^0.22.0",
+    "browserify": "^14.4.0",
     "cssnano": "^3.10.0",
+    "nyc": "^11.1.0",
     "perfectionist": "^2.4.0",
     "postcss-cli": "^4.1.0",
     "tslint": "^5.6.0",
+    "tslint-microsoft-contrib": "^5.0.1",
     "typescript": "^2.4.2"
   },
   "repository": "https://github.com/m2w/talaria.git",
