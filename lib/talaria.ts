@@ -121,13 +121,13 @@ export class Talaria {
         this.objHtmlUrl = this.urlForObject();
     }
 
-    public run(): void {
+    public run(): Promise<void> {
         // get all nodes that match our identifier of a post
         const objects: NodeListOf<Element> = document.querySelectorAll(this.config.permalinkSelector);
 
         if (objects.length > 0) {
             // get mappings
-            this.fetch(this.config.mappingUrl, 'application/json')
+            return this.fetch(this.config.mappingUrl, 'application/json')
                 .then((mappings: IMappings) => {
                     // matches are objects we need to retrieve comments for
                     const matches: IMatchedMapping[] = [];
@@ -177,9 +177,10 @@ export class Talaria {
                     });
                 })
                 .catch((error: XMLHttpRequest) => {
-                    throw new ConfigError('Configuration Error: Unable to load mappings file');
+                    throw new ConfigError('Unable to load mappings file');
                 });
         }
+        return Promise.reject('No content found');
     }
 
     private showComments(objId: string): void {
@@ -298,7 +299,7 @@ export class Talaria {
     private async fetch(url: string, accept: string): Promise<{}> {
         return new Promise((resolve: (s: ServerResponse) => void, reject: (req: XMLHttpRequest) => void): void => {
             const cachedResp = this.hitCache(url);
-            if (cachedResp) {
+            if (cachedResp !== null) {
                 resolve(cachedResp);
             } else {
                 const req: XMLHttpRequest = new XMLHttpRequest();
