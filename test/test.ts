@@ -1,13 +1,11 @@
 import * as chai from 'chai';
+import * as sinon from 'sinon';
+import { inspect } from 'util';
+
 import { Talaria, IConfiguration, Backend, ConfigError } from '../lib/talaria';
+import { bareTalariaConfig, cachedComments, comment, comments, testContent, testContentId } from './fixtures';
 
 const should = chai.should();
-
-const bareTalariaConfig = {
-  backend: Backend.Gists,
-  mappingUrl: '/my-mappings.json',
-  github_username: 'a-user'
-};
 
 describe('configuration', () => {
   it('requires a backend', () => {
@@ -79,21 +77,101 @@ describe('utils', () => {
 });
 
 describe('Talaria.run', () => {
-  // TODO: setup fake server
-  // TODO: stub sessionStorage
-  it.skip('exits when mappings cannot be loaded', () => {
+  const sandbox = sinon.sandbox.create();
+  let setStub;
+  let getStub;
 
+  before('stub sessionStorage', () => {
+    getStub = sandbox.stub(sessionStorage, 'getItem').callsFake((key) => {
+      switch (key) {
+        case '/timed-out-comments':
+          const d = new Date();
+          d.setHours(d.getHours() - 2);
+          return JSON.stringify({
+            ts: d,
+            value: comments
+          });
+        case '/exists':
+          return JSON.stringify(cachedComments);
+        default:
+          return null;
+      }
+    });
+    sandbox.useFakeServer();
+
+    sandbox.server.respondWith(
+      '/missing-mappings.json',
+      [404, {}, '']
+    );
+
+    sandbox.server.respondWith(
+      '/exists',
+      [200, { 'Content-Type': 'application/json' }, JSON.stringify(comments)]
+    );
+
+    sandbox.server.respondWith(
+      '/timed-out-comments',
+      [200, { 'Content-Type': 'application/json' }, JSON.stringify(comments)]
+    );
+
+    setStub = sandbox.stub(sessionStorage, 'setItem');
   });
 
-  it.skip('uses cached comments when available', () => {
-
+  after('restore sandbox', () => {
+    document.body.removeChild(
+      document.getElementById(testContentId)
+    );
+    sandbox.restore();
   });
 
-  it.skip('only uses cached comments when not expired', () => {
+  it('exits when mappings cannot be loaded', () => {
+    document.body.insertAdjacentHTML(
+      'afterbegin',
+      testContent('/test/123')
+    );
 
+    const conf = Object.assign(
+      bareTalariaConfig,
+      { mappingUrl: '/missing-mappings.json' }
+    );
+    const t = new Talaria(conf);
+    const p = t.run();
+
+    sandbox.server.respond();
+
+    return p.then(() => {
+      throw new Error('');
+    }).catch((error) => {
+      error.should.be.a('Error');
+    });
+  });
+
+  it('uses cached comments when available', () => {
+    const t = new Talaria(bareTalariaConfig);
+    return t['fetch']('/exists', '*').then((res) => {
+      res.should.deep.eq(comments);
+      getStub.called.should.be.true;
+    });
+  });
+
+  it('only uses cached comments when not expired', () => {
+    const t = new Talaria(bareTalariaConfig);
+    const p = t['fetch']('/timed-out-comments', '*');
+
+    sandbox.server.respond();
+
+    return p.then((res) => {
+      getStub.called.should.be.true;
+      setStub.called.should.be.true;
+      res.should.deep.eq(comments);
+      should.equal(setStub.called, true);
+    });
   });
 
   it.skip('does not retrieve comments for permalinks without mapping', () => {
-
+    document.body.insertAdjacentHTML(
+      'afterbegin',
+      testContent('/test/123')
+    );
   });
 });
