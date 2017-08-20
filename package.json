@@ -11,21 +11,29 @@
     "css:prefix": "postcss lib/*.css -c . -u autoprefixer -d dist/ --no-map",
     "css:pretty": "perfectionist lib/talaria.css lib/talaria.css",
     "lint": "tslint --type-check --project . lib/*.ts",
-    "test": "tsc -p tests/ && yarn test:run",
-    "test:run": "nyc --reporter=text ava tests/*.js"
+    "test": "karma start"
   },
   "directories": {
     "lib": "lib"
   },
   "dependencies": {},
   "devDependencies": {
+    "@types/chai": "^4.0.3",
+    "@types/mocha": "^2.2.41",
+    "@types/sinon": "^2.3.3",
     "autoprefixer": "^7.1.2",
-    "ava": "^0.22.0",
     "browserify": "^14.4.0",
+    "chai": "^4.1.1",
     "cssnano": "^3.10.0",
-    "nyc": "^11.1.0",
+    "karma": "^1.7.0",
+    "karma-chai": "^0.1.0",
+    "karma-chrome-launcher": "^2.2.0",
+    "karma-mocha": "^1.3.0",
+    "karma-typescript": "^3.0.5",
+    "mocha": "^3.5.0",
     "perfectionist": "^2.4.0",
     "postcss-cli": "^4.1.0",
+    "sinon": "^3.2.1",
     "tslint": "^5.6.0",
     "tslint-microsoft-contrib": "^5.0.1",
     "typescript": "^2.4.2"
