@@ -38,8 +38,13 @@ interface IComment {
     user: IUser;
 }
 
-type Comments = IComment[];
+interface ICacheEntry {
+    ts: number;
+    value: ServerResponse;
+}
 
+type CacheEntry = ICacheEntry | null;
+type Comments = IComment[];
 type ServerResponse = IMappings | Comments;
 
 export interface IConfiguration {
@@ -50,6 +55,7 @@ export interface IConfiguration {
     permalinkSelector?: CSSSelector;
     ignoreErrors?: boolean;
     commentsVisible?: boolean;
+    cacheTimeout?: number;
 }
 
 /**
@@ -82,6 +88,10 @@ export class Talaria {
                 Unable to retrieve comments for this post.
             </div>
         </div>`;
+    private static defaultConfig = {
+        cacheTimeout: 60 * 60 * 1000,
+        permalinkSelector: '.permalink'
+    };
     private config: IConfiguration;
     private getAPIendpoint: (id: string) => string;
     private objHtmlUrl: (id: string) => string;
@@ -91,9 +101,6 @@ export class Talaria {
             throw new ConfigError('Invalid configuration, see the docs for required configuration attributes');
         }
 
-        if (config.permalinkSelector === undefined) {
-            config.permalinkSelector = '.permalink';
-        }
         if (config.backend === Backend.Issues &&
             config.github_username === undefined &&
             config.github_repository === undefined) {
@@ -106,6 +113,8 @@ export class Talaria {
             throw new ConfigError('When using Gists-based comments, ' +
                 'your github_username is a required config value.');
         }
+
+        config = Object.assign(Talaria.defaultConfig, config);
 
         this.config = config;
         this.getAPIendpoint = this.commentsUrl();
@@ -268,12 +277,29 @@ export class Talaria {
                 </div>`;
     }
 
+    private hitCache(key): ServerResponse | null {
+        const cache: CacheEntry = JSON.parse(sessionStorage.getItem(key));
+        const now: number = (new Date()).getTime();
+        if (cache !== null && cache.ts > now - this.config.cacheTimeout) {
+            return cache.value;
+        }
+        return null;
+    }
+
+    private cache(key, val) {
+        const now: number = (new Date()).getTime();
+        const entry: ICacheEntry = {
+            ts: now,
+            value: val
+        };
+        sessionStorage.setItem(key, JSON.stringify(entry));
+    }
+
     private async fetch(url: string, accept: string): Promise<{}> {
         return new Promise((resolve: (s: ServerResponse) => void, reject: (req: XMLHttpRequest) => void): void => {
-            const cache: string = sessionStorage.getItem(url);
-            if (cache !== null) {
-                const resp: ServerResponse = JSON.parse(cache);
-                resolve(resp);
+            const cachedResp = this.hitCache(url);
+            if (cachedResp) {
+                resolve(cachedResp);
             } else {
                 const req: XMLHttpRequest = new XMLHttpRequest();
                 req.open('GET', url, true);
@@ -281,8 +307,8 @@ export class Talaria {
                 req.onload = (): void => {
                     if (req.status >= 200 && req.status < 400) {
                         const response: string = req.responseText;
-                        sessionStorage.setItem(url, response);
-                        const resp: ServerResponse = JSON.parse(response);
+                        const resp: ServerResponse = JSON.parse(req.responseText);
+                        this.cache(url, resp);
                         resolve(resp);
                     } else {
                         reject(req);
