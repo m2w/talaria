@@ -3,7 +3,7 @@ import * as sinon from 'sinon';
 import { inspect } from 'util';
 
 import { Talaria, IConfiguration, Backend, ConfigError } from '../lib/talaria';
-import { bareTalariaConfig, cachedComments, comment, comments, testContent, testContentId } from './fixtures';
+import * as fixtures from './fixtures';
 
 const should = chai.should();
 
@@ -60,7 +60,7 @@ describe('configuration', () => {
 
 describe('utils', () => {
   it('formats dates as inteded', () => {
-    const t = new Talaria(bareTalariaConfig);
+    const t = new Talaria(fixtures.bareTalariaConfig);
 
     const currentYear = new Date();
     currentYear.setMonth(0);
@@ -78,61 +78,72 @@ describe('utils', () => {
 
 describe('Talaria.run', () => {
   const sandbox = sinon.sandbox.create();
+  const permalinks = [
+    fixtures.urls.permalink,
+    fixtures.urls.permalinkInvalidMapping,
+    fixtures.urls.permalinkNoMapping
+  ];
   let setStub;
   let getStub;
 
-  before('stub sessionStorage', () => {
+  before('setup sandbox', () => {
     getStub = sandbox.stub(sessionStorage, 'getItem').callsFake((key) => {
       switch (key) {
-        case '/timed-out-comments':
+        case fixtures.urls.contentExpiredCache:
           const d = new Date();
           d.setHours(d.getHours() - 2);
           return JSON.stringify({
             ts: d,
-            value: comments
+            value: fixtures.comments
           });
-        case '/exists':
-          return JSON.stringify(cachedComments);
+        case fixtures.urls.contentCached:
+          return JSON.stringify({
+            ts: new Date().getTime(),
+            value: fixtures.comments
+          });
         default:
           return null;
       }
     });
-    sandbox.useFakeServer();
-
-    sandbox.server.respondWith(
-      '/missing-mappings.json',
-      [404, {}, '']
-    );
-
-    sandbox.server.respondWith(
-      '/exists',
-      [200, { 'Content-Type': 'application/json' }, JSON.stringify(comments)]
-    );
-
-    sandbox.server.respondWith(
-      '/timed-out-comments',
-      [200, { 'Content-Type': 'application/json' }, JSON.stringify(comments)]
-    );
-
     setStub = sandbox.stub(sessionStorage, 'setItem');
+
+    // setup stub github API and mappings file
+    sandbox.useFakeServer();
+    sandbox.server.respondWith(fixtures.urls.mappingsMissing, [404, {}, '']);
+    sandbox.server.respondWith(fixtures.urls.mappings, fixtures.jsonResp(fixtures.mappings));
+
+    sandbox.server.respondWith(fixtures.urls.content, fixtures.jsonResp(fixtures.comments));
+    sandbox.server.respondWith(fixtures.urls.contentCached, fixtures.jsonResp(fixtures.comments));
+    sandbox.server.respondWith(fixtures.urls.contentMissing, [404, {}, '']);
+    sandbox.server.respondWith(fixtures.urls.contentExpiredCache, fixtures.jsonResp(fixtures.comments));
   });
 
   after('restore sandbox', () => {
-    document.body.removeChild(
-      document.getElementById(testContentId)
-    );
     sandbox.restore();
   });
 
-  it('exits when mappings cannot be loaded', () => {
-    document.body.insertAdjacentHTML(
-      'afterbegin',
-      testContent('/test/123')
-    );
+  beforeEach('add test DOM contents', () => {
+    for (let href of permalinks) {
+      document.body.insertAdjacentHTML(
+        'afterbegin',
+        fixtures.testContent(href)
+      );
+    }
+  });
 
+  afterEach('cleanup DOM', () => {
+    for (let href of permalinks) {
+      document.body.removeChild(
+        document.getElementById(href)
+      );
+    }
+  });
+
+  // --- mappings
+  it('exits when mappings cannot be loaded', () => {
     const conf = Object.assign(
-      bareTalariaConfig,
-      { mappingUrl: '/missing-mappings.json' }
+      fixtures.bareTalariaConfig,
+      { mappingUrl: fixtures.urls.mappingsMissing }
     );
     const t = new Talaria(conf);
     const p = t.run();
@@ -146,32 +157,51 @@ describe('Talaria.run', () => {
     });
   });
 
+  it.skip('validates mappings', () => {
+
+  });
+
+  // --- caching
+  it.skip('caches mappings', () => {
+    const t = new Talaria(fixtures.bareTalariaConfig);
+    return t['fetch'](fixtures.urls.mappings, '*').then((res) => {
+      res.should.deep.eq(fixtures.mappings);
+      setStub.called.should.be.true;
+    });
+  });
+
   it('uses cached comments when available', () => {
-    const t = new Talaria(bareTalariaConfig);
-    return t['fetch']('/exists', '*').then((res) => {
-      res.should.deep.eq(comments);
+    const t = new Talaria(fixtures.bareTalariaConfig);
+    return t['fetch'](fixtures.urls.contentCached, '*').then((res) => {
+      res.should.deep.eq(fixtures.comments);
       getStub.called.should.be.true;
     });
   });
 
-  it('only uses cached comments when not expired', () => {
-    const t = new Talaria(bareTalariaConfig);
-    const p = t['fetch']('/timed-out-comments', '*');
+  it('fetches comments when cached data is expired', () => {
+    const t = new Talaria(fixtures.bareTalariaConfig);
+    const p = t['fetch'](fixtures.urls.contentExpiredCache, '*');
 
     sandbox.server.respond();
 
     return p.then((res) => {
       getStub.called.should.be.true;
       setStub.called.should.be.true;
-      res.should.deep.eq(comments);
+      res.should.deep.eq(fixtures.comments);
       should.equal(setStub.called, true);
     });
   });
 
-  it.skip('does not retrieve comments for permalinks without mapping', () => {
-    document.body.insertAdjacentHTML(
-      'afterbegin',
-      testContent('/test/123')
-    );
+  it.skip('retrieves comments for all permalinks with mappings', () => {
+    const t = new Talaria(fixtures.bareTalariaConfig);
+    const p = t.run();
+
+    sandbox.server.respond();
+
+    // TODO: implement
+
+    // test request count (should be 2)
+    // test DOM stuff (should be 1)
+    return p;
   });
 });
