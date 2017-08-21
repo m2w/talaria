@@ -28,8 +28,7 @@ module.exports = function (config) {
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {
-      "lib/*.ts": ['karma-typescript', 'coverage'],
-      'test/*.ts': ['karma-typescript']
+      '**/*.ts': ['karma-typescript']
     },
 
     karmaTypescriptConfig: {
@@ -38,15 +37,17 @@ module.exports = function (config) {
           'es5',
           'dom',
           'es2015'
-        ],
+        ]
+      },
+      coverageOptions: {
+        exclude: [/test\/.*\.ts$/]
       }
     },
-
 
     // test results reporter to use
     // possible values: 'dots', 'progress'
     // available reporters: https://npmjs.org/browse/keyword/karma-reporter
-    reporters: ['progress', 'karma-typescript'],
+    reporters: ['dots', 'karma-typescript'],
 
 
     // web server port
