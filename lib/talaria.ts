@@ -121,7 +121,7 @@ export class Talaria {
         this.objHtmlUrl = this.urlForObject();
     }
 
-    public run(): Promise<void> {
+    public async run(): Promise<void> {
         // get all nodes that match our identifier of a post
         const objects: NodeListOf<Element> = document.querySelectorAll(this.config.permalinkSelector);
 
@@ -144,28 +144,7 @@ export class Talaria {
                         }
                     }
 
-                    // get comments for all matches
-                    Promise.all(matches.map((element: IMatchedMapping): Promise<void> => {
-                        return this.fetch(
-                            this.getAPIendpoint(element.mapping.id),
-                            'application/vnd.github.v3.html+json'
-                        ).then((comments: IComment[]) => {
-                            // mount comments into DOM
-                            const commentHtml: HTMLDivElement = document.createElement('div');
-                            // tslint:disable-next-line:no-inner-html
-                            commentHtml.innerHTML = this.commentsWrapper(element.mapping.id, comments);
-
-                            // TODO: add configuration option for a selector where the comments are inserted at
-                            element.obj.parentElement.appendChild(commentHtml);
-                        }).catch((error: XMLHttpRequest) => {
-                            if (!this.config.ignoreErrors) {
-                                const node: HTMLDivElement = document.createElement('div');
-                                // tslint:disable-next-line:no-inner-html
-                                node.innerHTML = Talaria.errorHtml;
-                                element.obj.parentElement.appendChild(node);
-                            }
-                        });
-                    })).then(() => {
+                    Promise.all(matches.map(this.handleMatches)).then(() => {
                         const counters: NodeListOf<Element> = document.querySelectorAll('.talaria-counter');
                         for (let i: number = 0; i < counters.length; i += 1) {
                             counters[i].addEventListener('click', (e: Event) => {
@@ -180,7 +159,32 @@ export class Talaria {
                     throw new ConfigError('Unable to load mappings file');
                 });
         }
+
         return Promise.reject('No content found');
+    }
+
+    private async handleMatches(element: IMatchedMapping): Promise<void> {
+        return this.fetch(
+            this.getAPIendpoint(element.mapping.id),
+            'application/vnd.github.v3.html+json'
+        ).then((comments: IComment[]) => {
+            // mount comments into DOM
+            const commentHtml: HTMLDivElement = document.createElement('div');
+            // tslint:disable-next-line:no-inner-html
+            commentHtml.innerHTML = this.commentsWrapper(element.mapping.id, comments);
+
+            // TODO: add configuration option for a selector where the comments are inserted at
+            element.obj.parentElement.appendChild(commentHtml);
+        }).catch((error: XMLHttpRequest) => {
+            if (!this.config.ignoreErrors) {
+                const node: HTMLDivElement = document.createElement('div');
+                // tslint:disable-next-line:no-inner-html
+                node.innerHTML = Talaria.errorHtml;
+                element.obj.parentElement.appendChild(node);
+            } else {
+                // TODO: add notification into DOM
+            }
+        });
     }
 
     private showComments(objId: string): void {
@@ -278,16 +282,17 @@ export class Talaria {
                 </div>`;
     }
 
-    private hitCache(key): ServerResponse | null {
+    private hitCache(key: string): ServerResponse | null {
         const cache: CacheEntry = JSON.parse(sessionStorage.getItem(key));
         const now: number = (new Date()).getTime();
         if (cache !== null && cache.ts > now - this.config.cacheTimeout) {
             return cache.value;
         }
+
         return null;
     }
 
-    private cache(key, val) {
+    private cache(key: string, val: ServerResponse): void {
         const now: number = (new Date()).getTime();
         const entry: ICacheEntry = {
             ts: now,
@@ -298,7 +303,7 @@ export class Talaria {
 
     private async fetch(url: string, accept: string): Promise<{}> {
         return new Promise((resolve: (s: ServerResponse) => void, reject: (req: XMLHttpRequest) => void): void => {
-            const cachedResp = this.hitCache(url);
+            const cachedResp: ServerResponse | null = this.hitCache(url);
             if (cachedResp !== null) {
                 resolve(cachedResp);
             } else {
