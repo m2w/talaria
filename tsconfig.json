@@ -12,7 +12,7 @@
         "sourceMap": true,
         "outDir": "dist"
     },
-    "files": [
-        "lib/talaria.ts"
+    "include": [
+        "lib/*.ts"
     ]
 }
