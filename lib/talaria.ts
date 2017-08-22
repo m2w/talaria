@@ -53,6 +53,7 @@ export interface IConfiguration {
     github_username?: string;
     mappingUrl: MappingUrl;
     permalinkSelector?: CSSSelector;
+    insertionSelector?: CSSSelector;
     ignoreErrors?: boolean;
     commentsVisible?: boolean;
     cacheTimeout?: number;
@@ -163,26 +164,33 @@ export class Talaria {
         return Promise.reject('No content found');
     }
 
+    private insert(el: Element, html: string): void {
+        let target: Element = el.parentElement.querySelector(this.config.insertionSelector);
+        if (this.config.insertionSelector !== undefined && target === null) {
+            console.warn(`Unable to find target node using ${this.config.insertionSelector}`);
+        }
+        if (target === null) {
+            target = el.parentElement;
+        }
+        target.insertAdjacentHTML(
+            'beforeend',
+            html
+        );
+    }
+
     private async handleMatches(element: IMatchedMapping): Promise<void> {
         return this.fetch(
             this.getAPIendpoint(element.mapping.id),
             'application/vnd.github.v3.html+json'
         ).then((comments: IComment[]) => {
             // mount comments into DOM
-            const commentHtml: HTMLDivElement = document.createElement('div');
-            // tslint:disable-next-line:no-inner-html
-            commentHtml.innerHTML = this.commentsWrapper(element.mapping.id, comments);
-
-            // TODO: add configuration option for a selector where the comments are inserted at
-            element.obj.parentElement.appendChild(commentHtml);
+            const commentHtml: string = this.commentsWrapper(element.mapping.id, comments);
+            this.insert(element.obj, commentHtml);
         }).catch((error: XMLHttpRequest) => {
             if (!this.config.ignoreErrors) {
-                const node: HTMLDivElement = document.createElement('div');
-                // tslint:disable-next-line:no-inner-html
-                node.innerHTML = Talaria.errorHtml;
-                element.obj.parentElement.appendChild(node);
+                this.insert(element.obj, Talaria.errorHtml);
             } else {
-                // TODO: add notification into DOM
+                console.warn(`Unable to retrieve comments for ${element.mapping.id}`);
             }
         });
     }
