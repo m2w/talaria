@@ -65,7 +65,9 @@ Most of talaria's functionality can be customized through the configuration obje
 - `github_username` [`string`] *required*, is your username on github. It is used to construct the URLs back to your gists/issues and to build the github API URLs when using issue-based comments.
 - `github_repository` [`string`], is required when using issue-based comments, as it is necessary to build URLs for the github API.
 - `ignoreErrors` [`boolean`], is a flag that tells talaria to either display a short error message below content when errors occur (e.g. Rate-Limits on the github API or invalid `github_id`s) or simply ignore them.
-- `selector` [`string` (default: `.permalink`)], should be a valid CSSSelector that talaria can use to find `content-permalink`s.
+- `permalinkSelector` [`string` (default: `.permalink`)], should be a valid CSSSelector that talaria can use to find `content-permalink`s.
+- `insertionSelector` [`string`], an optional CSS selector that determines where comments are inserted into the DOM. The selector is run off `<permalink-element>.parentElement`, and inserted `beforeend` (as the last child of the target node).
+- `cacheTimeout` [`number` (default: `3600000`)], the time (in ms) before cached date expires (and talaria will refetch comment data).
 - `commentsVisible` [`boolean` (default: `false`)], a flag that determines whether comments are initially expanded. When `false`, users will only see a `N comments` notice, which they can click to view all corresponding comments.
 
 ### Customizing talaria's look'n'feel
