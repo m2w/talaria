@@ -269,23 +269,28 @@ export class Talaria {
     }
     private commentsWrapper(objId: string, comments: IComment[]): string {
         const objUrl: string = this.objHtmlUrl(objId);
-        const html: string = `<div class="talaria-comment-count">
-                <a class="talaria-counter"
-                   data-talaria-id="${objId}"
-                   href="#">${comments.length} comment${comments.length === 1 ? '' : 's'}</a>
-            </div>
-            <div class="${this.config.commentsVisible ? '' : 'talaria-hide'}"
-                 id="talaria-comments-${objId}">
-                ${comments.map((c: IComment) => this.commentMarkup(objUrl, c)).join('')}
+        let html: string = `<div class="talaria-btn-wrapper">
+                <a class="talaria-btn" href="${objUrl}" target="_blank">Be the first to comment</a>
             </div>`;
 
-        // FIXME: add special style for empty comments array
+        if (comments.length > 0) {
+            html = `<div class="talaria-comment-count">
+                <a class="talaria-counter"
+                data-talaria-id="${objId}"
+                href="#">${comments.length} comment${comments.length === 1 ? '' : 's'}</a>
+            </div>
+            <div class="${this.config.commentsVisible ? '' : 'talaria-hide'}"
+                id="talaria-comments-${objId}">
+                ${comments.map((c: IComment) => this.commentMarkup(objUrl, c)).join('')}
+                <div class="talaria-btn-wrapper">
+                    <a class="talaria-btn" href="${objUrl}" target="_blank">Add a Comment</a>
+                </div>
+            </div>`;
+        }
+
         return `<div class="talaria">
                     <div class="talaria-comment-list-wrapper">
                         ${html}
-                        <div class="talaria-btn-wrapper">
-                            <a class="talaria-btn" href="${objUrl}" target="_blank">Add a Comment</a>
-                        </div>
                     </div>
                 </div>`;
     }
