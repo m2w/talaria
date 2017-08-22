@@ -144,7 +144,7 @@ export class Talaria {
                         }
                     }
 
-                    Promise.all(matches.map(this.handleMatches)).then(() => {
+                    Promise.all(matches.map(this.handleMatches, this)).then(() => {
                         const counters: NodeListOf<Element> = document.querySelectorAll('.talaria-counter');
                         for (let i: number = 0; i < counters.length; i += 1) {
                             counters[i].addEventListener('click', (e: Event) => {
