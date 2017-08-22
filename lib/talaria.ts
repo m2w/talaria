@@ -296,7 +296,7 @@ export class Talaria {
     }
 
     private hitCache(key: string): ServerResponse | null {
-        const cache: CacheEntry = JSON.parse(sessionStorage.getItem(key));
+        const cache: CacheEntry = <CacheEntry>JSON.parse(sessionStorage.getItem(key));
         const now: number = (new Date()).getTime();
         if (cache !== null && cache.ts > now - this.config.cacheTimeout) {
             return cache.value;
@@ -326,7 +326,7 @@ export class Talaria {
                 req.onload = (): void => {
                     if (req.status >= 200 && req.status < 400) {
                         const response: string = req.responseText;
-                        const resp: ServerResponse = JSON.parse(req.responseText);
+                        const resp: ServerResponse = <ServerResponse>JSON.parse(req.responseText);
                         this.cache(url, resp);
                         resolve(resp);
                     } else {
