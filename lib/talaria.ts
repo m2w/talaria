@@ -57,6 +57,7 @@ export interface IConfiguration {
     ignoreErrors?: boolean;
     commentsVisible?: boolean;
     cacheTimeout?: number;
+    commentCountClickHandler?: (e: Event) => void
 }
 
 /**
@@ -91,8 +92,24 @@ export class Talaria {
         </div>`;
     private static defaultConfig = {
         cacheTimeout: 60 * 60 * 1000,
-        permalinkSelector: '.permalink'
+        permalinkSelector: '.permalink',
+        commentCountClickHandler: Talaria.showComments
     };
+
+    private static showComments(evt: Event): void {
+        const t: Element = <Element>evt.target;
+        const targetId: string = t.getAttribute('data-talaria-id');
+        const id: string = `talaria-comments-${targetId}`;
+
+        t.parentElement.classList.add('talaria-hide');
+
+        const comments: HTMLElement = document.getElementById(id);
+        comments.classList.remove('talaria-hide');
+        // TODO: add CSS animation
+
+        evt.preventDefault();
+    }
+
     private config: IConfiguration;
     private getAPIendpoint: (id: string) => string;
     private objHtmlUrl: (id: string) => string;
@@ -148,11 +165,7 @@ export class Talaria {
                     Promise.all(matches.map(this.handleMatches, this)).then(() => {
                         const counters: NodeListOf<Element> = document.querySelectorAll('.talaria-counter');
                         for (let i: number = 0; i < counters.length; i += 1) {
-                            counters[i].addEventListener('click', (e: Event) => {
-                                const t: Element = <Element>e.target;
-                                this.showComments(t.getAttribute('data-talaria-id'));
-                                e.preventDefault();
-                            });
+                            counters[i].addEventListener('click', this.config.commentCountClickHandler);
                         }
                     });
                 })
@@ -193,13 +206,6 @@ export class Talaria {
                 console.warn(`Unable to retrieve comments for ${element.mapping.id}`);
             }
         });
-    }
-
-    private showComments(objId: string): void {
-        const id: string = `talaria-comments-${objId}`;
-        const comments: HTMLElement = document.getElementById(id);
-        comments.classList.remove('talaria-hide');
-        // TODO: add CSS animation
     }
 
     private urlForObject(): (id: string) => string {

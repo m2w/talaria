@@ -6,8 +6,6 @@ talaria is a simple commenting system for static sites. It uses Github Issues or
 
 talaria is currently undergoing a full rewrite, it's about 60% done. It's missing a test suite and a couple of improvements/fixes:
 
-- [ ] option to toggle comment visibility
-- [ ] custom selector for where the comments are mounted inside the content
 - [ ] test suite with at least 80% coverage
 
 **Compatability**: talaria targets ES2015, as such IE is **not** supported!
@@ -69,6 +67,7 @@ Most of talaria's functionality can be customized through the configuration obje
 - `insertionSelector` [`string`], an optional CSS selector that determines where comments are inserted into the DOM. The selector is run off `<permalink-element>.parentElement`, and inserted `beforeend` (as the last child of the target node).
 - `cacheTimeout` [`number` (default: `3600000`)], the time (in ms) before cached date expires (and talaria will refetch comment data).
 - `commentsVisible` [`boolean` (default: `false`)], a flag that determines whether comments are initially expanded. When `false`, users will only see a `N comments` notice, which they can click to view all corresponding comments.
+- `commentCountClickHandler` [`(Event) => void`, (default: `Talaria.showComments`)], allows you to configure what happens when comments are initially hidden and the user clicks on the comment count. By default, the comments are shown and the comment count is hidden, please see the default implementation for an idea on how to customize this behaviour to suit your needs.
 
 ### Customizing talaria's look'n'feel
 
