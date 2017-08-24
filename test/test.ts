@@ -109,6 +109,13 @@ describe('Talaria.run', () => {
 
     // setup stub github API and mappings file
     sandbox.useFakeServer();
+
+    sandbox.server.respondImmediately = true;
+
+    sandbox.server.respondWith(/test-id\/comments/, (req) => {
+      req.respond(200, {}, JSON.stringify(fixtures.comments))
+    });
+
     sandbox.server.respondWith(fixtures.urls.mappingsMissing, [404, {}, '']);
     sandbox.server.respondWith(fixtures.urls.mappings, fixtures.jsonResp(fixtures.mappings));
 
@@ -149,8 +156,6 @@ describe('Talaria.run', () => {
     const t = new Talaria(conf);
     const p = t.run();
 
-    sandbox.server.respond();
-
     return p.then(() => {
       throw new Error('');
     }).catch((error) => {
@@ -159,15 +164,13 @@ describe('Talaria.run', () => {
   });
 
   it.skip('validates mappings', () => {
-
+    // TODO: implement
   });
 
   // --- caching
   it('caches mappings', () => {
     const t = new Talaria(fixtures.bareTalariaConfig);
     const p = t['fetch'](fixtures.urls.mappings, '*');
-
-    sandbox.server.respond();
 
     return p.then((res) => {
       res.should.deep.eq(fixtures.mappings);
@@ -187,8 +190,6 @@ describe('Talaria.run', () => {
     const t = new Talaria(fixtures.bareTalariaConfig);
     const p = t['fetch'](fixtures.urls.contentExpiredCache, '*');
 
-    sandbox.server.respond();
-
     return p.then((res) => {
       getStub.called.should.be.true;
       setStub.called.should.be.true;
@@ -200,14 +201,15 @@ describe('Talaria.run', () => {
   it('retrieves comments for all permalinks with mappings', () => {
     const t = new Talaria(fixtures.bareTalariaConfig);
     const p = t.run();
-    // need to mock "https://api.github.com/gists/test-id/comments" etc
-
-    sandbox.server.respond();
 
     return p.then(() => {
       // mapping + 2 API requests
       sandbox.server.requests.length.should.be.equal(3);
-      document.querySelectorAll('.talaria-comment-wrapper').length.should.be.equal(1);
+
+      // only 1 content object should have comments
+      document.querySelectorAll('.talaria').length.should.be.equal(1);
+      // there should be 4 comments
+      document.querySelectorAll('.talaria-comment-wrapper').length.should.be.equal(4);
     });
   });
 });
