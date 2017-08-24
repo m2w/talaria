@@ -86,7 +86,7 @@ describe('Talaria.run', () => {
   let setStub;
   let getStub;
 
-  before('setup sandbox', () => {
+  beforeEach('setup sandbox', () => {
     getStub = sandbox.stub(sessionStorage, 'getItem').callsFake((key) => {
       switch (key) {
         case fixtures.urls.contentExpiredCache:
@@ -118,10 +118,6 @@ describe('Talaria.run', () => {
     sandbox.server.respondWith(fixtures.urls.contentExpiredCache, fixtures.jsonResp(fixtures.comments));
   });
 
-  after('restore sandbox', () => {
-    sandbox.restore();
-  });
-
   beforeEach('add test DOM contents', () => {
     for (let href of permalinks) {
       document.body.insertAdjacentHTML(
@@ -129,6 +125,10 @@ describe('Talaria.run', () => {
         fixtures.testContent(href)
       );
     }
+  });
+
+  afterEach('restore sandbox', () => {
+    sandbox.restore();
   });
 
   afterEach('cleanup DOM', () => {
@@ -197,16 +197,17 @@ describe('Talaria.run', () => {
     });
   });
 
-  it.skip('retrieves comments for all permalinks with mappings', () => {
+  it('retrieves comments for all permalinks with mappings', () => {
     const t = new Talaria(fixtures.bareTalariaConfig);
     const p = t.run();
+    // need to mock "https://api.github.com/gists/test-id/comments" etc
 
     sandbox.server.respond();
 
-    // TODO: implement
-
-    // test request count (should be 2)
-    // test DOM stuff (should be 1)
-    return p;
+    return p.then(() => {
+      // mapping + 2 API requests
+      sandbox.server.requests.length.should.be.equal(3);
+      document.querySelectorAll('.talaria-comment-wrapper').length.should.be.equal(1);
+    });
   });
 });
