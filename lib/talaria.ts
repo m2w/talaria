@@ -132,7 +132,7 @@ export class Talaria {
                 'your github_username is a required config value.');
         }
 
-        config = Object.assign(Talaria.defaultConfig, config);
+        config = Object.assign({}, Talaria.defaultConfig, config);
 
         this.config = config;
         this.getAPIendpoint = this.commentsUrl();

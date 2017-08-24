@@ -142,6 +142,7 @@ describe('Talaria.run', () => {
   // --- mappings
   it('exits when mappings cannot be loaded', () => {
     const conf = Object.assign(
+      {},
       fixtures.bareTalariaConfig,
       { mappingUrl: fixtures.urls.mappingsMissing }
     );
