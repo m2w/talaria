@@ -163,9 +163,13 @@ describe('Talaria.run', () => {
   });
 
   // --- caching
-  it.skip('caches mappings', () => {
+  it('caches mappings', () => {
     const t = new Talaria(fixtures.bareTalariaConfig);
-    return t['fetch'](fixtures.urls.mappings, '*').then((res) => {
+    const p = t['fetch'](fixtures.urls.mappings, '*');
+
+    sandbox.server.respond();
+
+    return p.then((res) => {
       res.should.deep.eq(fixtures.mappings);
       setStub.called.should.be.true;
     });
