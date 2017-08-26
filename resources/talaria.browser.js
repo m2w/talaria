@@ -49,6 +49,17 @@ class Talaria {
         this.getAPIendpoint = this.commentsUrl();
         this.objHtmlUrl = this.urlForObject();
     }
+    static parent(el, sel) {
+        let parent = el.parentElement;
+        while (parent && parent.nodeName !== document.body.nodeName) {
+            if (parent.matches(sel)) {
+                return parent;
+            }
+            parent = parent.parentElement;
+        }
+        return null;
+    }
+    ;
     static showComments(evt) {
         const t = evt.target;
         const targetId = t.getAttribute('data-talaria-id');
@@ -95,11 +106,14 @@ class Talaria {
         });
     }
     insert(el, html) {
-        let target = el.parentElement.querySelector(this.config.insertionSelector);
-        if (this.config.insertionSelector !== undefined && target === null) {
-            console.warn(`Unable to find target node using ${this.config.insertionSelector}`);
+        let target;
+        if (this.config.insertionPointLocator !== undefined) {
+            target = this.config.insertionPointLocator(el);
+            if (target === null) {
+                console.warn(`Unable to find target node using the provided insertion function`);
+            }
         }
-        if (target === null) {
+        else {
             target = el.parentElement;
         }
         target.insertAdjacentHTML('beforeend', html);
