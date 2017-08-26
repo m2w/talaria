@@ -69,8 +69,8 @@
     padding-left: 60px;
     margin-top: 15px;
     margin-bottom: 15px;
-    border-top: 2px solid #fff;
-    border-bottom: 2px solid #fff;
+    border-top: 2px solid transparent;
+    border-bottom: 2px solid transparent;
 }
 
 .talaria-avatar-wrapper {

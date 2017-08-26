@@ -44,10 +44,20 @@ class Talaria {
             throw new ConfigError('When using Gists-based comments, ' +
                 'your github_username is a required config value.');
         }
-        config = Object.assign(Talaria.defaultConfig, config);
+        config = Object.assign({}, Talaria.defaultConfig, config);
         this.config = config;
         this.getAPIendpoint = this.commentsUrl();
         this.objHtmlUrl = this.urlForObject();
+    }
+    static showComments(evt) {
+        const t = evt.target;
+        const targetId = t.getAttribute('data-talaria-id');
+        const id = `talaria-comments-${targetId}`;
+        t.parentElement.classList.add('talaria-hide');
+        const comments = document.getElementById(id);
+        comments.classList.remove('talaria-hide');
+        // TODO: add CSS animation
+        evt.preventDefault();
     }
     run() {
         return __awaiter(this, void 0, void 0, function* () {
@@ -73,11 +83,7 @@ class Talaria {
                     Promise.all(matches.map(this.handleMatches, this)).then(() => {
                         const counters = document.querySelectorAll('.talaria-counter');
                         for (let i = 0; i < counters.length; i += 1) {
-                            counters[i].addEventListener('click', (e) => {
-                                const t = e.target;
-                                this.showComments(t.getAttribute('data-talaria-id'));
-                                e.preventDefault();
-                            });
+                            counters[i].addEventListener('click', this.config.commentCountClickHandler);
                         }
                     });
                 })
@@ -113,12 +119,6 @@ class Talaria {
                 }
             });
         });
-    }
-    showComments(objId) {
-        const id = `talaria-comments-${objId}`;
-        const comments = document.getElementById(id);
-        comments.classList.remove('talaria-hide');
-        // TODO: add CSS animation
     }
     urlForObject() {
         switch (this.config.backend) {
@@ -282,7 +282,8 @@ Talaria.errorHtml = `<div class="talaria">
         </div>`;
 Talaria.defaultConfig = {
     cacheTimeout: 60 * 60 * 1000,
-    permalinkSelector: '.permalink'
+    permalinkSelector: '.permalink',
+    commentCountClickHandler: Talaria.showComments
 };
 exports.Talaria = Talaria;
 
