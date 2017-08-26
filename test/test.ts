@@ -59,6 +59,25 @@ describe('configuration', () => {
 });
 
 describe('utils', () => {
+  beforeEach('setup DOM', () => {
+    document.body.insertAdjacentHTML(
+      'afterbegin',
+      `<div class="outer">
+        <div id="middle">
+          <div class="inner">
+            <h3>
+              <a class="permalink"></a>
+            </h3>
+          </div>
+        </div>
+      </div>`
+    );
+  });
+
+  afterEach('cleanup DOM', () => {
+    document.body.removeChild(document.querySelector('.outer'));
+  });
+
   it('formats dates as inteded', () => {
     const t = new Talaria(fixtures.bareTalariaConfig);
 
@@ -73,6 +92,20 @@ describe('utils', () => {
 
     t['formatDate'](currentYear).should.equal('on Jan 31');
     t['formatDate'](pastYear).should.equal('on Dec 31, 2016');
+  });
+
+  it('finds the right parent elements', () => {
+    const start = document.querySelector('.permalink');
+    const inner = document.querySelector('.inner');
+    const middle = document.querySelector('#middle');
+    const outer = document.querySelector('.outer');
+    const h3 = document.querySelector('h3');
+
+    Talaria.parent(start, '.inner').should.be.equal(inner);
+    should.equal(Talaria.parent(start, '.middle'), null);
+    Talaria.parent(start, '#middle').should.be.equal(middle);
+    Talaria.parent(start, '.outer').should.be.equal(outer);
+    Talaria.parent(start, 'h3').should.be.equal(h3);
   });
 });
 

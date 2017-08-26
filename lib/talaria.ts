@@ -53,7 +53,7 @@ export interface IConfiguration {
     github_username?: string;
     mappingUrl: MappingUrl;
     permalinkSelector?: CSSSelector;
-    insertionSelector?: CSSSelector;
+    insertionPointLocator?: (el: Element) => Element;
     ignoreErrors?: boolean;
     commentsVisible?: boolean;
     cacheTimeout?: number;
@@ -70,6 +70,17 @@ export class ConfigError extends Error { }
  * content on the current page.
  */
 export class Talaria {
+    public static parent(el: Element, sel: CSSSelector): Element | null {
+        let parent: Element = el.parentElement;
+
+        while (parent && parent.nodeName !== document.body.nodeName) {
+            if (parent.matches(sel)) {
+                return parent;
+            }
+            parent = parent.parentElement;
+        }
+        return null;
+    };
     private static month: { [m: number]: string } = {
         0: 'Jan',
         1: 'Feb',
@@ -178,11 +189,13 @@ export class Talaria {
     }
 
     private insert(el: Element, html: string): void {
-        let target: Element = el.parentElement.querySelector(this.config.insertionSelector);
-        if (this.config.insertionSelector !== undefined && target === null) {
-            console.warn(`Unable to find target node using ${this.config.insertionSelector}`);
-        }
-        if (target === null) {
+        let target: Element;
+        if (this.config.insertionPointLocator !== undefined) {
+            target = this.config.insertionPointLocator(el);
+            if (target === null) {
+                console.warn(`Unable to find target node using the provided insertion function`);
+            }
+        } else {
             target = el.parentElement;
         }
         target.insertAdjacentHTML(
