@@ -1,8 +1,10 @@
 title: Talaria
 description: A commenting system for static content, hosted on github
-google_analytics: 
+google_analytics:
 show_downloads: true
-theme: jekyll-theme-cayman
+theme: minima
+github_username: m2w
+full_url: https://m2w.github.io/talaria
 
-gems:
+plugins:
   - jekyll-mentions

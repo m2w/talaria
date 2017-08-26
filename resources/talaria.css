@@ -1,0 +1,154 @@
+.talaria {
+    font-family: -apple-system,
+                 BlinkMacSystemFont,
+                 "Segoe UI",
+                 Helvetica,
+                 Arial,
+                 sans-serif,
+                 "Apple Color Emoji",
+                 "Segoe UI Emoji",
+                 "Segoe UI Symbol";
+    font-size: 14px;
+    line-height: 1.5;
+    color: #24292e;
+    word-wrap: break-word;
+}
+
+.talaria * {
+    -webkit-box-sizing: border-box;
+            box-sizing: border-box;
+}
+
+/* utilities  */
+
+.talaria-hide {
+    display: none;
+}
+
+/* component stylings */
+
+.talaria-btn-wrapper {
+    text-align: right;
+    margin: 10px;
+}
+
+.talaria-btn {
+    color: #24292e;
+    background-color: #eff3f6;
+    background-image: -webkit-gradient(linear, left top, left bottom, from(#fafbfc), color-stop(90%, #eff3f6));
+    background-image: linear-gradient(-180deg, #fafbfc 0%, #eff3f6 90%);
+    padding: 6px 12px;
+    font-size: 14px;
+    line-height: 20px;
+    white-space: nowrap;
+    cursor: pointer;
+    background-repeat: repeat-x;
+    background-position: -1px -1px;
+    background-size: 110% 110%;
+    border: 1px solid rgba(27, 31, 35, .2);
+    border-radius: .25em;
+    background-repeat: repeat-x;
+    background-position: -1px -1px;
+    background-size: 110% 110%;
+    -webkit-appearance: none;
+       -moz-appearance: none;
+            appearance: none;
+    text-decoration: none;
+}
+
+.talaria-btn:hover {
+    background-color: #e6ebf1;
+    background-image: -webkit-gradient(linear, left top, left bottom, from(#f0f3f6), color-stop(90%, #e6ebf1));
+    background-image: linear-gradient(-180deg, #f0f3f6 0%, #e6ebf1 90%);
+    background-position: 0 -0.5em;
+    border-color: rgba(27, 31, 35, .35);
+}
+
+.talaria-comment-wrapper {
+    position: relative;
+    padding-left: 60px;
+    margin-top: 15px;
+    margin-bottom: 15px;
+    border-top: 2px solid #fff;
+    border-bottom: 2px solid #fff;
+}
+
+.talaria-avatar-wrapper {
+    float: left;
+    margin-left: -60px;
+    border-radius: 3px;
+}
+
+.talaria-avatar {
+    display: inline-block;
+    overflow: hidden;
+    line-height: 1;
+    vertical-align: middle;
+    border-radius: 3px;
+}
+
+.talaria-comment::before, .talaria-comment::after {
+    position: absolute;
+    top: 11px;
+    right: 100%;
+    left: -16px;
+    display: block;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+    content: " ";
+    border-color: transparent;
+    border-style: solid solid outset;
+}
+
+.talaria-comment::before {
+    border-width: 8px;
+    border-right-color: #d1d5da;
+}
+
+.talaria-comment {
+    position: relative;
+    background-color: #fff;
+    border: 1px solid #d1d5da;
+    border-radius: 3px;
+}
+
+.talaria-comment::after {
+    margin-top: 1px;
+    margin-left: 2px;
+    border-width: 7px;
+    border-right-color: #f6f8fa;
+}
+
+.talaria-comment p {
+    margin: 0 !important;
+}
+
+.talaria-comment-header {
+    color: #586069;
+    background-color: #f6f8fa;
+    border-top-left-radius: 3px;
+    border-top-right-radius: 3px;
+    padding: 10px 15px;
+}
+
+.talaria-comment-body {
+    width: 100%;
+    padding: 15px;
+    overflow: visible;
+    font-size: 14px;
+}
+
+.talaria-link {
+    color: inherit;
+    text-decoration: none;
+}
+
+.talaria-link:hover {
+    text-decoration: underline;
+}
+
+.talaria-error {
+    padding: 1em;
+    text-align: center;
+}

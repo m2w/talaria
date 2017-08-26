@@ -1,178 +1,97 @@
-_talaria_ is a commenting system for static sites, like
-[github pages](http://pages.github.com/). It provides the option to
-provide comments on github hosted content either through github commit
-comments or through gist comments. You can see talaria in action
-[here](http://blog.tibidat.com).
+# talaria
 
+talaria is a simple commenting system for static sites. It uses Github Issues or Gists as backend.
 
-# ToC
+## Status
 
-* [Installation](#installation)
-* [Introduction](#introduction)
-* [Getting started](#getting-started)
-* [Customizing and setting up talaria](#customizing-and-setting-up-talaria)
-  * [Customizing the Look'n'Feel](#optional-customizing-the-looknfeel)
-* [Best Practices](#best-practices)
-* [Regarding API rate-limiting](#fyi)
-* [Trivia](#trivia)
+talaria is currently undergoing a full rewrite, it's about 80% done. TODO:
 
+- live tests
+- github release
 
-## Installation
+**Compatability**: talaria targets ES2015, as such IE is **not** supported!
 
-To install _talaria_ you have the choice between
-[bower](http://bower.io/):
+## Getting started
 
-```bower install m2w/talaria```
+### Installation
 
-and a plain
-[download](https://github.com/m2w/talaria/releases/tag/0.3.1).
+Once the rewrite becomes stable, I will create a new github release. If you are feeling adventourus, feel free to clone the repo and explore (it's only ~200LOC).
 
-_talaria_ depends on [jQuery](http://jquery.com/) and
-[async.js](https://github.com/caolan/async).
+I will eventually get around to releasing talaria on `npm` but until that time, github releases will have to suffice.
 
-Note: _talaria_ is currently not listed on the bower index.
+### Requirements
 
-## Introduction
+For talaria to function, your content has to comply with certain structural requirements. talaria requires any content that you want to have comments for (such as a blog post), to have an `<a>` tag with a `href` that uniquely identifies said content (a permalink). All permalinks on a page should be queriable from a single `document.querySelectorAll`, hence must have a shared `class` attribute (e.g. `permalink`).
 
-_talaria_ makes some assumptions about how your DOM is structured. It
-assumes that:
-
-- every commentable content source (for example a blog post) is
-  wrapped in an `<article>`
-- these `<article>` contain one distinct element (a permalink) that
-  points to an URL that can be used to extrapolate the actual file
-  name of the content.
-
-What does that mean? Here is an example layout that would satisfy
-_talaria_'s needs.
+Additionally, talaria is currently hardcoded to attach the comments as the *last* child element of the `parentElement` of your permalink, so overall your content should be structured as similar to this:
 
 ```html
 <body>
 ...
 <article>
-<a class="permalink" href="/2014/02/06/a-blog-post">A blog post!</a>
-<p>My awesome unstyled one line blog post :D</p>
+<a class="permalink" href="a-permalink">Title</a>
+<p>...</p>
+<!-- comments will be added here  -->
 </article>
-...
 </body>
 ```
 
-## Getting started
+### Initializing talaria
 
-_talaria_ is composed of two components:
+Start by including `<script src="dist/talaria.js"></script>` somewhere on you page (preferably towards then end of `<body>`).
+You now have access to the global `talaria` variable. To initialize talaria, add a second `<script>` below the first one:
 
-- `talaria.js` which contains the logic to interact with the
-  [github API](http://developer.github.com/v3/)
-- `talaria.css` (or `talaria.sass` for [SASS](http://sass-lang.com/)
-  users) which provide a basic github-esque styling for the comments
-
-Assuming you have installed _talaria_ with bower and are using jekyll,
-we need to customize _talaria_ so that it knows where to find your
-content sources (such as your blog posts).
-
-## Customizing and setting up talaria
-
-This step requires that you modify your site's (base) template.
-
-1. Add `<link href="/bower_components/talaria/dist/talaria.css"
-   rel="stylesheet" type="text/css">` (or add an `@import` statement
-   for the SASS in your main sass file)
-2. Add `<script type="text/javascript"
-   src="/bower_components/talaria/dist/talaria.js"></script>` (after
-   jQuery and async.js!)
-3. *After* including `talaria.js` call `talaria.init(CONFIG)` at some
-   point, where `CONFIG` is an object that *must* contain appropriate
-   values for `REPOSITORY_NAME` and `GITHUB_USERNAME`. For example:
-
-```js
-talaria.init({REPOSITORY_NAME: 'm2w.github.com', GITHUB_USERNAME: 'm2w'});
+```html
+<script src="<path-to-talaria>/dist/talaria.js"></script>
+<script>
+  var t = new talaria.Talaria({
+      backend: talaria.Backend.Gists,
+      mappingUrl: 'mappings.json',
+      github_username: 'm2w',
+      github_repository: 'talaria',
+      ignoreErrors: true
+    });
+    t.run();
+</script>
 ```
 
-Should you prefer to use gist comments instead of commit comments
-(recommended, but requires changes to your build process) the
-following options are also required: `USE_GISTS` and `GIST_MAPPINGS`.
+### Configuring talaria
 
-`USE_GISTS` is a simple boolean flag. `GIST_MAPPINGS` is a URL which
-returns a JSON file that contains an object as follows:
+Most of talaria's functionality can be customized through the configuration object passed to the `Talaria` constructor. Available configuration options are:
 
-``
-{:FILENAME: {"id": :GIST_ID, "permalink": :permalink},
-:FILENAME2: {"id": :GIST_ID, "permalink": :permalink}}
-``
+- `backend` [`Backend`] *required*, the backend determines where you intend to host comments for your content: as comments on github issues or as comments on gists. The options are respectively `Backend.Issues` and `Backend.Gists`.
+- `mappingUrl` [`string`] *required*, a URL pointing to a JSON object containing a mapping of `content-permalink -> github_id`. The `content-permalink` is used by talaria to associate content with its comments and the `github_id` is either the id of a gist or of an issue.
+- `github_username` [`string`] *required*, is your username on github. It is used to construct the URLs back to your gists/issues and to build the github API URLs when using issue-based comments.
+- `github_repository` [`string`], is required when using issue-based comments, as it is necessary to build URLs for the github API.
+- `ignoreErrors` [`boolean`], is a flag that tells talaria to either display a short error message below content when errors occur (e.g. Rate-Limits on the github API or invalid `github_id`s) or simply ignore them.
+- `permalinkSelector` [`string` (default: `.permalink`)], should be a valid CSSSelector that talaria can use to find `content-permalink`s.
+- `insertionSelector` [`string`], an optional CSS selector that determines where comments are inserted into the DOM. The selector is run off `<permalink-element>.parentElement`, and inserted `beforeend` (as the last child of the target node).
+- `cacheTimeout` [`number` (default: `3600000`)], the time (in ms) before cached date expires (and talaria will refetch comment data).
+- `commentsVisible` [`boolean` (default: `false`)], a flag that determines whether comments are initially expanded. When `false`, users will only see a `N comments` notice, which they can click to view all corresponding comments.
+- `commentCountClickHandler` [`(Event) => void`, (default: `Talaria.showComments`)], allows you to configure what happens when comments are initially hidden and the user clicks on the comment count. By default, the comments are shown and the comment count is hidden, please see the default implementation for an idea on how to customize this behaviour to suit your needs.
 
-The expected format of the mapping is currently still
-experimental. Nonetheless, it requires that you generate the mappings
-as part of your build process, have a look at
-[my Rakefile](https://github.com/m2w/m2w.github.com/blob/master/Rakefile#L152)
-for inspiration.
+### Customizing talaria's look'n'feel
 
-If required you have a couple of further customization options,
-include these as required in your `CONFIG` object:
+talaria ships with very simple styles that mostly mirror github's own styles. These styles are available under `dist/talaria{.css|.min.css}`.
 
-- `COMMENTABLE_CONTENT_PATH_PREFIX` (default `_posts/`) relative
-  prefix to your content source files
-- `CONTENT_SUFFIX` (default `.md`) this is used by _talaria_ during
-  the extrapolation of the path to individual content sources
-- `PERMALINK_IDENTIFIER` (default `a.permalink`) this should be a
-  valid jQuery selector that will be unique for each content source
-- `PAGINATION_SCHEME` (default `/\/page\d+\//`) _talaria_ uses this to
-  check whether it should expand comments by default or not
-- `PERMALINK_STYLE` (default
-  `/[\.\w\-_:\/]+\/(\d+)\/(\d+)\/(\d+)\/([\w\-\.]+)$/`, which matches
-  something along the lines of `/:categories/:year/:month/:day/:slug`,
-  note the missing extension at the end) which controls how talaria
-  resolves filenames from permalinks, you can choose between `pretty`,
-  `date`, `none` or a custom regex. These correspond to the jekyll
-  defaults, if you choose to provide your own regex and you are using
-  commit-based comments please have a look at
-  `extrapolatePathFromPermalink` to ensure that it will work as you
-  expect it to.
+All styles are encapsulated using a `talaria-` prefix and should therefore not "leak". If you wish to customize the styles, please look into both `lib/talaria.css` and `lib/talaria.ts` as to what selectors you should provide stylings for.
 
-You're now done, test the setup to ensure everything is working fine
-and report any bugs :)
+## Gotchas
 
-### (optional) Customizing the look'n'feel
+* The Github v3 API is restricted to *60 API calls per hour* for unauthenticated users. This means we can retrieve comments for at most 60 posts! talaria tries to use `sessionStorage` to reduce the total number of API calls, but users can/will still run into `403` errors from throtteling depending on your site's setup.
 
-By default _talaria_ comments are skinned to almost mirror their
-counterparts on github. However, not all parts of _talaria_ are
-styled. Styling for elements such as `<a>` and `<code>` is (currently)
-not provided. Checkout `talaria.css` or `talaria.sass` and feel free
-to customize this to suit your tastes.
+## Development
 
-## Best practices
+I would love feedback on the code, bug reports, feature requests or even pull requests!
 
-- Avoid multi-file changesets that contain commentable
-  content. e.g. if you update 3 blog posts at once (say you change the
-  spelling for a tag), commit each change file seperately. This ensures
-  there is no comment overlap between posts. It also guarantees that the
-  user will only see the post he planned to comment on while on github.
-- Avoid commiting non-commentable content along with commentable
-  content. e.g. if you regenerate your tag subpages after creating a
-  new blog post.
+The goal for talaria is to have a small, clean and well documented code base. You can help make that a reality :)
 
-*TLDR*: commits for commentable content should never include anything beside the content itself.
+To get started hacking on talaria:
 
-## FYI
-
-The github API is currently restricted to *60 API calls per hour* for
-unauthenticated users. This means that your users can retrieve
-comments for at most 30 entries. This number is lower if you have
-multiple commits per 'content source file'; it costs 1 additional API
-request per additional commit (so if you have 3 commits for a the post
-`/2013/03/22/blog-relaunch`, _talaria_ actually needs a total of 4 API
-calls to get all comments). _talaria_ tries to use `sessionStorage` to
-reduce the total number of API calls, but users could potentially
-still run into `403` errors from throtteling, in which case _talaria_
-displays a simple error message.
-
-Users clicking the "Add comment" buttons get redirected to github,
-where they can then login and comment. However, at this point I do not
-know of a way to get users back to your site after the redirect.
-
-_talaria_ appends the comments (that is they become the last child
-element) of your `<article>`s. This is currently not customizable.
+1. Clone this repo.
+2. Run `yarn install` inside the repo (yarn is an alternative to npm)
+3. See `yarn run` for a list of commands - all of talaria's build steps are `package.json` `scripts`
 
 ## Trivia
 
-talaria are the [winged sandals](http://en.wikipedia.org/wiki/Talaria)
-worn by Hermes in Greek mythology.
+talaria are the [winged sandals](http://en.wikipedia.org/wiki/Talaria) worn by Hermes in Greek mythology.
