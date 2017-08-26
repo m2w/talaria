@@ -4,6 +4,7 @@ google_analytics:
 show_downloads: true
 theme: minima
 github_username: m2w
+highlighter: rouge
 full_url: https://m2w.github.io/talaria
 
 plugins:
