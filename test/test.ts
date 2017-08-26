@@ -206,8 +206,8 @@ describe('Talaria.run', () => {
       // mapping + 2 API requests
       sandbox.server.requests.length.should.be.equal(3);
 
-      // only 1 content object should have comments
-      document.querySelectorAll('.talaria').length.should.be.equal(1);
+      // only 1 content object should have comments, there should be 1 container showing an error message
+      document.querySelectorAll('.talaria').length.should.be.equal(2);
       // there should be 4 comments
       document.querySelectorAll('.talaria-comment-wrapper').length.should.be.equal(4);
     });
