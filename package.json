@@ -11,6 +11,7 @@
     "css:prefix": "postcss lib/*.css -c . -u autoprefixer -d dist/ --no-map",
     "css:pretty": "perfectionist lib/talaria.css lib/talaria.css",
     "lint": "tslint --type-check --project . lib/*.ts",
+    "test:ci": "karma start --single-run --browsers ChromeHeadless",
     "test": "karma start"
   },
   "directories": {
