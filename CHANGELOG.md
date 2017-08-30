@@ -15,7 +15,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - talaria has undergone a complete rewrite. It is now written in typescript, and only supports "modern" browsers (sorry IE) due to its use of `Promise`. This means that talaria now has 0 external dependencies!
 - CSS classes and the rendered DOM structure of comments has changed drastically. The default style has been updated to reflect the current Github look'n'feel
+- added additional configuration options
 - improved documentation
+- automated testing
+- added CI
 
 ## Removed
 
