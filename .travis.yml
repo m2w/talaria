@@ -1,0 +1,18 @@
+language: node_js
+
+dist: trusty
+sudo: false
+
+addons:
+  chrome: stable
+
+cache:
+  yarn: true
+  directories:
+    - node_modules
+
+install:
+  - yarn
+
+script:
+  - yarn test:ci
