@@ -6,10 +6,9 @@ talaria is a simple commenting system for static sites. It uses Github Issues or
 
 ## Status
 
-talaria is currently undergoing a full rewrite, it's about 90% done. TODO:
+talaria is currently undergoing a full rewrite, it's about 95% done. TODO:
 
 - github release
-- gh-pages based demo (let users chose between gist and issue comments per button click - add notification that changing it requires a reload)
 
 **Compatability**: talaria targets ES2015, as such IE is **not** supported!
 
