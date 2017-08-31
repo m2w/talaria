@@ -2,6 +2,8 @@
 
 talaria is a simple commenting system for static sites. It uses Github Issues or Gists as backend.
 
+[![Build Status](https://travis-ci.org/m2w/talaria.svg?branch=master)](https://travis-ci.org/m2w/talaria)
+
 ## Status
 
 talaria is currently undergoing a full rewrite, it's about 80% done. TODO:
