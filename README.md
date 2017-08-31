@@ -4,13 +4,7 @@ talaria is a simple commenting system for static sites. It uses Github Issues or
 
 [![Build Status](https://travis-ci.org/m2w/talaria.svg?branch=master)](https://travis-ci.org/m2w/talaria)
 
-## Status
-
-talaria is currently undergoing a full rewrite, it's about 95% done. TODO:
-
-- github release
-
-**Compatability**: talaria targets ES2015, as such IE is **not** supported!
+**Compatability Notice**: talaria targets ES2015, as such IE is **not** supported!
 
 ## Getting started
 
