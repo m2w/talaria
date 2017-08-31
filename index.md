@@ -4,10 +4,7 @@ talaria is a simple commenting system for static sites. It uses Github Issues or
 
 ## Status
 
-talaria is currently undergoing a full rewrite, it's about 80% done. TODO:
-
-- live tests
-- github release
+talaria is currently undergoing a full rewrite, it's about 95% done.
 
 **Compatability**: talaria targets ES2015, as such IE is **not** supported!
 
@@ -64,8 +61,8 @@ Most of talaria's functionality can be customized through the configuration obje
 - `github_username` [`string`] *required*, is your username on github. It is used to construct the URLs back to your gists/issues and to build the github API URLs when using issue-based comments.
 - `github_repository` [`string`], is required when using issue-based comments, as it is necessary to build URLs for the github API.
 - `ignoreErrors` [`boolean`], is a flag that tells talaria to either display a short error message below content when errors occur (e.g. Rate-Limits on the github API or invalid `github_id`s) or simply ignore them.
-- `permalinkSelector` [`string` (default: `.permalink`)], should be a valid CSSSelector that talaria can use to find `content-permalink`s.
-- `insertionSelector` [`string`], an optional CSS selector that determines where comments are inserted into the DOM. The selector is run off `<permalink-element>.parentElement`, and inserted `beforeend` (as the last child of the target node).
+- `permalinkSelector` [`string` (default: `.permalink`)], should be a valid CSS selector that talaria can use to find `content-permalink`s.
+- `insertionPointLocator` [`(Element) => Element`], an optional function that takes the permalink `Element` as input and uses it to locate the proper position in the DOM at which to insert the comments. talaria uses the returned `Element` to insert the comments at  `beforeend` (as the last child of the `Element`). To make writing this function a little simpler, talaria provides `parent: (Element, CSSSelector) => Element?`, a function that takes an `Element`, a CSS selector and attempts to find a parent `Element` matching the CSS selector. It returns the matching `Element` or `null`.
 - `cacheTimeout` [`number` (default: `3600000`)], the time (in ms) before cached date expires (and talaria will refetch comment data).
 - `commentsVisible` [`boolean` (default: `false`)], a flag that determines whether comments are initially expanded. When `false`, users will only see a `N comments` notice, which they can click to view all corresponding comments.
 - `commentCountClickHandler` [`(Event) => void`, (default: `Talaria.showComments`)], allows you to configure what happens when comments are initially hidden and the user clicks on the comment count. By default, the comments are shown and the comment count is hidden, please see the default implementation for an idea on how to customize this behaviour to suit your needs.

@@ -6,5 +6,43 @@ layout: default
 
 <script src="resources/talaria.browser.js"></script>
 <script>
-  {% include talaria-run.js %}
+  {% include talaria-run.issue.js %}
+
+  let backend = talaria.Backend.Issues;
+  let permalink = document.querySelector('.permalink');
+  let btn = document.getElementById('toggle-btn');
+  let testArea = document.getElementById('test-area');
+  let gistConf = document.getElementById('gist-conf');
+  let issueConf = document.getElementById('issue-conf');
+  btn.addEventListener('click', (e) => {
+    // remove any talaria artefacts
+    testArea.querySelector('.talaria').remove();
+    // update button text, conf snippet + permalink href
+    switch (backend) {
+      case talaria.Backend.Issues:
+        backend = talaria.Backend.Gists;
+        btn.innerText = 'Swap to the Issue backend';
+        gistConf.classList.remove('hidden');
+        issueConf.classList.add('hidden');
+        permalink.setAttribute('href', "/test/gist");
+        break;
+      default:
+        backend = talaria.Backend.Issues;
+        btn.innerText = 'Swap to the Gist backend';
+        issueConf.classList.remove('hidden');
+        gistConf.classList.add('hidden');
+        permalink.setAttribute('href', "/test/issue");
+    }
+    // run talaria with new config
+    // FIXME: find a way to reuse the _includes snippets
+    let nt = new talaria.Talaria({
+      backend: backend,
+      mappingUrl: 'resources/mappings.json',
+      github_username: 'm2w',
+      github_repository: 'talaria',
+      insertionPointLocator: insertionPointFinder
+    });
+    nt.run();
+  });
+
 </script>

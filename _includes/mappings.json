@@ -1,5 +1,8 @@
 {
-  "/test/200": {
+  "/test/issue": {
     "id": "14"
+  },
+  "/test/gist": {
+    "id": "e152885d62abf5227404b8b8f8209add"
   }
 }
