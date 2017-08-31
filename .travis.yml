@@ -1,20 +1,25 @@
 language: node_js
 node_js:
-  - "7"
-
+- '7'
 dist: trusty
 sudo: false
-
 addons:
   chrome: stable
-
 cache:
   yarn: true
   directories:
-    - node_modules
-
+  - node_modules
 install:
-  - yarn
-
+- yarn
 script:
-  - yarn test:ci
+- yarn build
+- yarn test:ci
+deploy:
+  provider: releases
+  api_key:
+    secure: gn6+SRSkAxFJHQtYMEPKeEACtmz8Rfh3fd1KcEd6SsZxI6FNsgC5106VbyDDQklUJQTxi0VnJUGCfGSTm34MreH+F1HrWfyD1KgOQYBGHy6seBFMLWp4uEq6L0r5WhSOo/8/LAjkWkzSmyiudQdbE6vLZAMKojcc2y23IwMPDkyhLAxgjyNGqqqEoHJhSRCsJLMiZ315wY1ovPVZf5FA+9cAZLHU9FO7vJ2yXKhCgSPe/00dQ1HhrNXwULyEyNF+HKaA8pXUY1GEnQ1rv0pKAElVsP+vPuhSpqoq8xBOwiKO2/Uuq6MKLx+K5CEZgZNOqgoSM81XsXeA/ur+4fYwXwgMOOTWx+x8dAXvoAS7rKo4iYmTPTuCwIOHsIIz0QobhQg4LgHV11H8lJ+zIgbVVO9VxH5DyHzMrP5gCD01MXSIPr4au3dEKgmRH99GbtsBBxRLn6mgWhTldgdrJOiWKSIlL5BlwGCNxwKw+PNzEw8eK1LJfh/3HZq1UFhFnzwjFXIKYl9wKswW0yrWSGQNnmzK4IOyrBXPb4C6DHMFp0/muuDt/hehnTa8O2GyLfUA/iYgxUeQnRHBATZwUWMLzTIaXivop7VPW2U6SOQpYlOcjL6PrDjPMk8vRwplyqVY0VJkqWem4SDEBZzJh/0SqaT8xn2+dj+1BTgN7tGY9Eg=
+  file_glob: true
+  file: dist/*
+  skip_cleanup: true
+  on:
+    tags: true
